@@ -40,7 +40,7 @@ public:
     
     void callbackPosition(const geometry_msgs::Pose2D::ConstPtr& msg) {
         cv::Mat_<float> cameraPos = estimator->getCameraPosData();
-        if(cameraPos.at<float>(0) <= 0 && cameraPos.at<float>(1) <= 0) estimator->setReceived(false);
+        if(cameraPos.at<float>(0) == 0 && cameraPos.at<float>(1) == 0) estimator->setReceived(false);
         else {
             estimator->setReceived(true);
             cv::Mat data = (cv::Mat_<float>(3, 1) << msg->x, msg->y, msg->theta);
