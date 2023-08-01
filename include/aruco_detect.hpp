@@ -56,19 +56,11 @@ public:
 
     bool isStringNonEmpty(const string& str) { return !(str.empty()); }
 
-    // void setDetectParams(Ptr<aruco::DetectorParameters>& detectorParams, const string& dp, const int& refine) {
-    //     if(isStringNonEmpty(dp)){
-    //         FileStorage fs(dp, FileStorage::READ);
-    //         bool readOk = detectorParams->readDetectorParameters(fs.root());
-    //         if(!readOk) {
-    //             cerr << "Invalid detector parameters file" << endl;
-    //             exit(-1);
-    //         }
-    //     }
-    //     if(refine){
-    //         detectorParams->cornerRefinementMethod = refine;
-    //     }
-    // }
+    void setDetectParams(Ptr<aruco::DetectorParameters>& detectorParams, const string& dp, const int& refine) {
+        if(refine){
+            detectorParams->cornerRefinementMethod = refine;
+        }
+    }
 
     void setDitionary(Ptr<aruco::Dictionary>& dictionary, const int& d, const string& cd) {
         if(d){

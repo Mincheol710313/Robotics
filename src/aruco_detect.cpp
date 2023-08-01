@@ -42,7 +42,7 @@ public:
     if (!ros::param::get("~markerDistance", markerDistance_)) { markerDistance_ = 1;}
     if (!ros::param::get("~multipleMarkers", multipleMarkers_)) { multipleMarkers_ = true;}
     if (!ros::param::get("~detectorParams", detectorParams_)) { detectorParams_ = "";}
-    if (!ros::param::get("~refine", refine_)) { markerDistance_ = 0;}
+    if (!ros::param::get("~refine", refine_)) { refine_ = 1;}
     if (!ros::param::get("~camId", camId_)) { camId_ = 4;}
     if (!ros::param::get("~video", video_)) { video_ = "";}
     if (!ros::param::get("~dictionary", dictionary_)) { dictionary_ = 3;}
@@ -86,8 +86,8 @@ public:
     aruco_detector_->calculateMeanPose(camPos_, camPosMean_);
 
     geometry_msgs::Pose2D camera_pose_;
-    camera_pose_.x = camPosMean_[0];
-    camera_pose_.y = camPosMean_[1];
+    camera_pose_.x = camPos_.at<double>(0,0);
+    camera_pose_.y = camPos_.at<double>(0,1);
     camera_pose_.theta = camYaw_;
 
     // image 생성하는 코드
