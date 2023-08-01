@@ -20,12 +20,13 @@
     <node pkg="agv_detect" type="agv_tf_listener" name="agv_tf_listener"/>
     
     <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
-   	<param name="video_device" value="/dev/video4" />
+   	    <param name="video_device" value="/dev/video4" />
     	<param name="image_width" value="960" />
     	<param name="image_height" value="540" />
     	<param name="pixel_format" value="yuyv" />
     	<param name="color_format" value="yuv422p" />
     	<param name="camera_frame_id" value="usb_cam" />
-  	<param name="io_method" value="mmap"/>
+    	<param name="framerate" value="60" />
+  	    <param name="io_method" value="mmap"/>
   </node>
 </launch>
