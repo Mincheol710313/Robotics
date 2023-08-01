@@ -110,11 +110,11 @@ public:
     void moveTheta(float targetTheta) {
         if (dTheta(targetTheta) >= 0) {
             command.at<float>(1) 
-            = std::min(std::min(cur_vel.at<float>(1) + acc_angular / velocity_command_frequency, AngularMax), gainP * abs(dTheta(targetTheta)));
+            = std::min(std::min(abs(cur_vel.at<float>(1)) + acc_angular / velocity_command_frequency, AngularMax), gainP * abs(dTheta(targetTheta)));
         }
         else {
             command.at<float>(1) 
-            = -std::min(std::min(cur_vel.at<float>(1) + acc_angular / velocity_command_frequency, AngularMax), gainP * abs(dTheta(targetTheta)));
+            = -std::min(std::min(abs(cur_vel.at<float>(1)) + acc_angular / velocity_command_frequency, AngularMax), gainP * abs(dTheta(targetTheta)));
         }
     }
 
