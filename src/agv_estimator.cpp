@@ -65,7 +65,9 @@ public:
         geometry_msgs::Pose2D msg;
         msg.x = corrected.at<float>(0);
         msg.y = corrected.at<float>(1);
-        msg.theta = corrected.at<float>(2);
+        float theta = corrected.at<float>(2);
+        theta = fmod(theta + M_PI, 2 * M_PI) - M_PI;
+        msg.theta = theta;
         estimated_position_publisher_.publish(msg); 
     }
 };
