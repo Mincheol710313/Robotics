@@ -94,7 +94,7 @@ public:
             else {
                 command.at<float>(1) = 0;
                 command.at<float>(0) 
-                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainP * abs(dX(targetY)));
+                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainP * abs(dY(targetY)));
             }
         }
         else {
@@ -103,7 +103,7 @@ public:
             else {
                 command.at<float>(1) = 0;
                 command.at<float>(0) 
-                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainP * abs(dX(targetY)));
+                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainP * abs(dY(targetY)));
             }
         }
     }
