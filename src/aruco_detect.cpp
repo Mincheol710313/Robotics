@@ -86,8 +86,8 @@ public:
     aruco_detector_->calculateMeanPose(camPos_, camPosMean_);
 
     geometry_msgs::Pose2D camera_pose_;
-    camera_pose_.x = camPos_.at<double>(0,0);
-    camera_pose_.y = camPos_.at<double>(0,1);
+    camera_pose_.x = camPos_[0][0];
+    camera_pose_.y = camPos_[0][1];
     camera_pose_.theta = camYaw_;
 
     // image 생성하는 코드
