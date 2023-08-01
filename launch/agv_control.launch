@@ -1,0 +1,4 @@
+<launch>
+	<node name="agv_control" pkg="agv_control" type="agv_control" output="screen">
+	</node>
+</launch>
