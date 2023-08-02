@@ -137,6 +137,13 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(${PROJECT_NAME} src/agv_estimator.cpp)
 
+add_executable(agv_pose_subscriber src/agv_pose_subscriber.cpp)
+target_link_libraries(
+  agv_pose_subscriber
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
