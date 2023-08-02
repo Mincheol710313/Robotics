@@ -7,8 +7,10 @@ class CONTROL {
 private:
     // int --;
     bool received;
-    float gainP;
-    float distanceTolerance;
+    float gainLinear;
+    float gainAngular;
+    float toleranceLinear;
+    float toleranceAngular;
     float linearMax;
     float AngularMax;
     float pi;
@@ -23,9 +25,11 @@ private:
     cv::Mat_<float> command;
     
 public:
-    CONTROL(float gain=1, float tolerance=0.01, float lin=0.45, float ang=1, float acc_lin=0.7, float acc_ang=2.5, float frequency=50.0) {
-        gainP = gain;
-        distanceTolerance = tolerance;
+    CONTROL(float gainLinear=0.5, float gainAngular = 1, float toleranceLinear=0.01, float toleranceAngular = 0.05, float lin=0.45, float ang=1, float acc_lin=0.7, float acc_ang=2.5, float frequency=50.0) {
+        gainLinear = gainLinear;
+        gainAngular = gainAngular;
+        toleranceLinear = toleranceLinear;
+        toleranceAngular = toleranceAngular;
         received = false;
         linearMax = lin;
         AngularMax = ang;
@@ -65,41 +69,41 @@ public:
     void moveX(float targetX) {
         if (dX(targetX) >= 0) {
             float targetTheta = 0;
-            if (abs(dTheta(targetTheta)) >= distanceTolerance/2) { moveTheta(targetTheta); }
+            if (abs(dTheta(targetTheta)) >= toleranceAngular/2) { moveTheta(targetTheta); }
             else {
                 command.at<float>(1) = 0;               
                 command.at<float>(0) 
-                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainP * abs(dX(targetX)));
+                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainLinear * abs(dX(targetX)));
                 }
             }
         
         else {
             float targetTheta = pi;
-            if (abs(dTheta(targetTheta)) >= distanceTolerance/2) { moveTheta(targetTheta); }
+            if (abs(dTheta(targetTheta)) >= toleranceAngular/2) { moveTheta(targetTheta); }
             else {
                 command.at<float>(1) = 0;
                 command.at<float>(0) 
-                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainP * abs(dX(targetX)));
+                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainLinear * abs(dX(targetX)));
             }
         }
     }
     void moveY(float targetY) {
         if (dY(targetY) >= 0) {
             float targetTheta = pi/2;
-            if (abs(dTheta(targetTheta)) >= distanceTolerance/2) { moveTheta(targetTheta); }
+            if (abs(dTheta(targetTheta)) >= toleranceAngular/2) { moveTheta(targetTheta); }
             else {
                 command.at<float>(1) = 0;
                 command.at<float>(0) 
-                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainP * abs(dY(targetY)));
+                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainLinear * abs(dY(targetY)));
             }
         }
         else {
             float targetTheta = -pi/2;
-            if (abs(dTheta(targetTheta)) >= distanceTolerance/2) { moveTheta(targetTheta); }
+            if (abs(dTheta(targetTheta)) >= toleranceAngular/2) { moveTheta(targetTheta); }
             else {
                 command.at<float>(1) = 0;
                 command.at<float>(0) 
-                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainP * abs(dY(targetY)));
+                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainLinear * abs(dY(targetY)));
             }
         }
     }
@@ -107,18 +111,18 @@ public:
         if (dTheta(targetTheta) >= 0) {
             // abs를 붙인 이유 : 현재 각속도가 음수일 때 절대값을 취하면서 양수로 바뀌면서 목표 각속도보다 커지는 경우가 생김
             command.at<float>(1) 
-            = std::min(std::min(abs(cur_vel.at<float>(1)) + acc_angular / velocity_command_frequency, AngularMax), gainP * abs(dTheta(targetTheta)));
+            = std::min(std::min(abs(cur_vel.at<float>(1)) + acc_angular / velocity_command_frequency, AngularMax), gainAngular * abs(dTheta(targetTheta)));
         }
         else {
             command.at<float>(1) 
-            = -std::min(std::min(abs(cur_vel.at<float>(1)) + acc_angular / velocity_command_frequency, AngularMax), gainP * abs(dTheta(targetTheta)));
+            = -std::min(std::min(abs(cur_vel.at<float>(1)) + acc_angular / velocity_command_frequency, AngularMax), gainAngular * abs(dTheta(targetTheta)));
         }
     }
 
     void moveToTarget() {
         switch (moveCase) {
             case 1: { 
-                if (abs(dY(0)) > distanceTolerance) {
+                if (abs(dY(0)) > toleranceLinear) {
                     moveY(0);            
                 }
                 else {  // y=0 도착
@@ -129,7 +133,7 @@ public:
                 break;
             }
             case 2: {
-                if (abs(dX(tar.at<float>(0))) > distanceTolerance) {
+                if (abs(dX(tar.at<float>(0))) > toleranceLinear) {
                     moveX(tar.at<float>(0));
                 }
                 else { // X축 도착
@@ -140,7 +144,7 @@ public:
                 break;
             }
             case 3: {
-                if (abs(dY(tar.at<float>(1)))  > distanceTolerance)  {
+                if (abs(dY(tar.at<float>(1)))  > toleranceLinear)  {
                     moveY(tar.at<float>(1)); 
                 }
                 else { // Y축 도착

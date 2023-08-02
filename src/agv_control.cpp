@@ -14,8 +14,10 @@ private:
     ros::Publisher velocity_command_publisher_;
     ros::Timer velocity_command_timer_;
 
-    float gain_;
-    float tolerance_;
+    float gainLinear_;
+    float gainAngular_;
+    float toleranceLinear_;
+    float toleranceAngular_;
     float linearMax_;
     float AngularMax_;
     float publish_velocity_command_frequency_;
@@ -25,8 +27,10 @@ private:
 
 public:
     ControlROSWrapper(ros::NodeHandle *nh) {
-        if (!ros::param::get("~gain", gain_)) { gain_ = 1; }
-        if (!ros::param::get("~tolerance", tolerance_)) { tolerance_ = 0.01; }
+        if (!ros::param::get("~gainLinear", gainLinear_)) { gainLinear_ = 0.5; }
+        if (!ros::param::get("~gainAngular", gainAngular_)) { gainAngular_ = 1; }
+        if (!ros::param::get("~toleranceLinear", toleranceLinear_)) { toleranceLinear_ = 0.01; }
+        if (!ros::param::get("~toleranceAngular", toleranceAngular_)) { toleranceAngular_ = 0.005; }
         if (!ros::param::get("~linearMax", linearMax_)) { linearMax_ = 0.45; }
         if (!ros::param::get("~AngularMax", AngularMax_)) { AngularMax_ = 1.0; }
         if (!ros::param::get("~publish_velocity_command_frequency", publish_velocity_command_frequency_)) { publish_velocity_command_frequency_ = 50.0; }
@@ -34,7 +38,7 @@ public:
         if (!ros::param::get("~acc_angluar", acc_angluar_)) { acc_angluar_ = 2.5; }
         if (!ros::param::get("~markerDistance", markerDistance_)) { markerDistance_ = 1.8; }
 
-        control.reset(new CONTROL(gain_, tolerance_, linearMax_, AngularMax_, acc_linear_, acc_angluar_, publish_velocity_command_frequency_));
+        control.reset(new CONTROL(gainLinear_, gainAngular_, toleranceLinear_, toleranceAngular_, linearMax_, AngularMax_, acc_linear_, acc_angluar_, publish_velocity_command_frequency_));
 
         estimated_position_subscriber_ = nh->subscribe("estimated_pos", 10, &ControlROSWrapper::callbackEstimatedPosition, this);
         velocity_command_publisher_ = nh->advertise<geometry_msgs::Twist>("cmd_vel", 10);
