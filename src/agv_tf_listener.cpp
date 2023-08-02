@@ -10,7 +10,7 @@ int main(int argc, char** argv){
   tf::TransformListener listener;
   ros::Publisher pose_pub_ = node.advertise<geometry_msgs::Pose2D>("/marker_pos", 10);
 
-  ros::Rate rate(10.0);
+  ros::Rate rate(50.0);
   while (node.ok()){
     tf::StampedTransform transform;
     try{
