@@ -1,12 +1,12 @@
 <launch>
 	<node name="agv_control" pkg="agv_control" type="agv_control" output="screen">
-        <param name="marker_distance" type="double" value="1.8"/>
-        <param name="gain" type="double" value="0.5"/>
-        <param name="tolerance" type="double" value="0.005"/>
-        <param name="linearMax" type="double" value="0.8"/>
-        <param name="AngularMax" type="double" value="1"/>
-        <param name="publish_velocity_cmooand_frequency" type="double" value="50.0"/>
-        <param name="acc_linear" type="double" value="0.7"/>
-        <param name="acc_angular" type="double" value="2.5"/>
+		<param name="gain" type="double" value="1.0"/>
+		<param name="tolerance" type="double" value="0.01"/>
+		<param name="linearMax" type="double" value="0.45"/>
+		<param name="angularMax" type="double" value="1.0"/>
+		<param name="publish_velocity_command_frequency" type="double" value="50.0"/>
+		<param name="acc_linear_" type="double" value="0.7"/>
+		<param name="acc_angular_" type="double" value="2.5"/>
+		<param name="markerDistance" type="double" value="1.8"/>
 	</node>
 </launch>

@@ -21,7 +21,7 @@ private:
     float publish_velocity_command_frequency_;
     float acc_linear_;
     float acc_angluar_;
-    float marker_distance_;
+    float markerDistance_;
 
 public:
     ControlROSWrapper(ros::NodeHandle *nh) {
@@ -32,7 +32,7 @@ public:
         if (!ros::param::get("~publish_velocity_command_frequency", publish_velocity_command_frequency_)) { publish_velocity_command_frequency_ = 50.0; }
         if (!ros::param::get("~acc_linear", acc_linear_)) { acc_linear_ = 0.7; }
         if (!ros::param::get("~acc_angluar", acc_angluar_)) { acc_angluar_ = 2.5; }
-        if (!ros::param::get("~marker_distance", marker_distance_)) { marker_distance_ = 1.8; }
+        if (!ros::param::get("~markerDistance", markerDistance_)) { markerDistance_ = 1.8; }
 
         control.reset(new CONTROL(gain_, tolerance_, linearMax_, AngularMax_, acc_linear_, acc_angluar_, publish_velocity_command_frequency_));
 
@@ -44,7 +44,8 @@ public:
         // target_position_subscriber_ = nh->subscribe("target_pos", 10, &ControlROSWrapper::callbackTargetPosition, this);
     }
     bool callbackTargetPosition(agv_msgs::Target::Request &req, agv_msgs::Target::Response &res) { 
-        cv::Mat data = (cv::Mat_<float>(3, 1) << marker_distance_ * req.pose.x, marker_distance_ * req.pose.y, req.pose.theta);
+        // ros params를 통해서 markerDistance를 받아온 후 이를 이용하여 target position을 설정한다.
+        cv::Mat data = (cv::Mat_<float>(3, 1) << markerDistance_* req.pose.x, markerDistance_* req.pose.y, req.pose.theta);
         control->setTar(data);
         control->setReceived(true);
         control->startMove();

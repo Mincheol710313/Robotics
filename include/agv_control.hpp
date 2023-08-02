@@ -62,10 +62,6 @@ public:
         else { return target - cur.at<float>(2); }
     }
 
-    // void moveLinear(flaot target) {
-    //     command.at<float>(0) = std::min(linearMax, gainP * abs(distance(target))); 
-    // }
-
     void moveX(float targetX) {
         if (dX(targetX) >= 0) {
             float targetTheta = 0;
@@ -109,6 +105,7 @@ public:
     }
     void moveTheta(float targetTheta) {
         if (dTheta(targetTheta) >= 0) {
+            // abs를 붙인 이유 : 현재 각속도가 음수일 때 절대값을 취하면서 양수로 바뀌면서 목표 각속도보다 커지는 경우가 생김
             command.at<float>(1) 
             = std::min(std::min(abs(cur_vel.at<float>(1)) + acc_angular / velocity_command_frequency, AngularMax), gainP * abs(dTheta(targetTheta)));
         }
