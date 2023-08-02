@@ -22,14 +22,14 @@ public:
         command = 0.0;
 
         kf.init(stateSize, measSize_fusion, contrSize, CV_32F);
-        // Transition Matrix A                                  state: [x, y, θ,xd,yd, w]
+        // Transition Matrix F                                  state: [x, y, θ,xd,yd, w]
         kf.transitionMatrix = (cv::Mat_<float>(stateSize, stateSize) << 1, 0, 0,dt, 0, 0,  
                                                                         0, 1, 0, 0,dt, 0,  
                                                                         0, 0, 1, 0, 0,dt,  
                                                                         0, 0, 0, 0, 0, 0,  
                                                                         0, 0, 0, 0, 0, 0,  
                                                                         0, 0, 0, 0, 0, 0);
-        // Measurement Matirx H
+        // Measurement Matirx H(Observation Matrix)             measurement: [x, y, θ, v, w]
         kf.measurementMatrix = (cv::Mat_<float>(measSize_fusion, stateSize) <<  1, 0, 0, 0, 0, 0,   // x
                                                                                 0, 1, 0, 0, 0, 0,   // y
                                                                                 0, 0, 1, 0, 0, 0,   // θ
@@ -42,8 +42,8 @@ public:
                                                                     0, 0,  // xd
                                                                     0, 0,  // yd
                                                                     0, 1); // w
-        cv::setIdentity(kf.processNoiseCov, cv::Scalar::all(1e-2));     // Q
-        cv::setIdentity(kf.measurementNoiseCov, cv::Scalar::all(1e-1)); // R
+        cv::setIdentity(kf.processNoiseCov, cv::Scalar::all(1e-3));     // Q
+        cv::setIdentity(kf.measurementNoiseCov, cv::Scalar::all(1)); // R
         cv::setIdentity(kf.errorCovPost, cv::Scalar::all(1));           // P
     }
     
@@ -74,10 +74,13 @@ public:
             kf.measurementMatrix.at<float>(3,4) = sin(kf.statePost.at<float>(2));
         }
     }
+    // 예측 단계 : 사용자의 입력(command)을 가 했을 때 예상되는 측정값(statePre) 계산
     cv::Mat_<float> predict() {
         kf.predict(command);
         return kf.statePre;
     }
+
+    // 보정 단계 : 앞서 예측된 측정값(statePre)과 실제 측정값(sensor)을 비교하여 보정
     cv::Mat_<float> correct() {
         cv::Mat sensor_marker;
         if (received) sensor_marker = posData.clone();
