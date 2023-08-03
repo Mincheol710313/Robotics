@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<launch>
+
+  <node pkg="gotogoal" type="odom_to_pose.py" name="odom_to_pose" />
+  <node pkg="gotogoal" type="robot_controller.py" name="robot_controller" />
+  <node pkg="gotogoal" type="pub_set_goal.py" name="pub_set_goal" output="screen" />
+
+</launch>
