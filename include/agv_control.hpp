@@ -25,11 +25,11 @@ private:
     cv::Mat_<float> command;
     
 public:
-    CONTROL(float gainLinear=0.5, float gainAngular = 1, float toleranceLinear=0.01, float toleranceAngular = 0.05, float lin=0.45, float ang=1, float acc_lin=0.7, float acc_ang=2.5, float frequency=50.0) {
-        gainLinear = gainLinear;
-        gainAngular = gainAngular;
-        toleranceLinear = toleranceLinear;
-        toleranceAngular = toleranceAngular;
+    CONTROL(float gainLinear_=0.5, float gainAngular_ = 1, float toleranceLinear_ = 0.01, float toleranceAngular_ = 0.05, float lin=0.45, float ang=1, float acc_lin=0.7, float acc_ang=2.5, float frequency=50.0) {
+        gainLinear = gainLinear_;
+        gainAngular = gainAngular_;
+        toleranceLinear = toleranceLinear_;
+        toleranceAngular = toleranceAngular_;
         received = false;
         linearMax = lin;
         AngularMax = ang;
@@ -69,7 +69,7 @@ public:
     void moveX(float targetX) {
         if (dX(targetX) >= 0) {
             float targetTheta = 0;
-            if (abs(dTheta(targetTheta)) >= toleranceAngular/2) { moveTheta(targetTheta); }
+            if (abs(dTheta(targetTheta)) >= toleranceAngular) { moveTheta(targetTheta); }
             else {
                 command.at<float>(1) = 0;               
                 command.at<float>(0) 
@@ -79,7 +79,7 @@ public:
         
         else {
             float targetTheta = pi;
-            if (abs(dTheta(targetTheta)) >= toleranceAngular/2) { moveTheta(targetTheta); }
+            if (abs(dTheta(targetTheta)) >= toleranceAngular) { moveTheta(targetTheta); }
             else {
                 command.at<float>(1) = 0;
                 command.at<float>(0) 
@@ -90,7 +90,7 @@ public:
     void moveY(float targetY) {
         if (dY(targetY) >= 0) {
             float targetTheta = pi/2;
-            if (abs(dTheta(targetTheta)) >= toleranceAngular/2) { moveTheta(targetTheta); }
+            if (abs(dTheta(targetTheta)) >= toleranceAngular) { moveTheta(targetTheta); }
             else {
                 command.at<float>(1) = 0;
                 command.at<float>(0) 
@@ -99,7 +99,7 @@ public:
         }
         else {
             float targetTheta = -pi/2;
-            if (abs(dTheta(targetTheta)) >= toleranceAngular/2) { moveTheta(targetTheta); }
+            if (abs(dTheta(targetTheta)) >= toleranceAngular) { moveTheta(targetTheta); }
             else {
                 command.at<float>(1) = 0;
                 command.at<float>(0) 
@@ -155,7 +155,7 @@ public:
                 break;
             }
         }
-        // std::cout << moveCase << std::endl;
+        std::cout << moveCase << std::endl;
     }
 };
 
