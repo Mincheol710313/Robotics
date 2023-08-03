@@ -16,7 +16,7 @@ int main(int argc, char** argv){
   ros::init(argc, argv, "camera_tf_broadcaster");
 
   ros::NodeHandle node;
-  ros::Subscriber sub = node.subscribe("/camera_pos", 10, &poseCallback);
+  ros::Subscriber sub = node.subscribe("/filter_camera_pos", 10, &poseCallback);
 
   ros::spin();
   return 0;

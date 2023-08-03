@@ -37,9 +37,9 @@ public:
     if (!ros::param::get("~squareLength", squareLength_)) { squareLength_ = 0.062;}
     if (!ros::param::get("~markerLength", markerLength_)) { markerLength_ = 0.0496;}
     if (!ros::param::get("~showRejected", showRejected_)) { showRejected_ = "false";}
-    if (!ros::param::get("~estimatePose", estimatePose_)) { estimatePose_ = "/home/godssi/catkin_ws/src/agv_detect/include/calibration_540.yml";}
+    if (!ros::param::get("~estimatePose", estimatePose_)) { estimatePose_ = "/home/godssi/aruco_test/build/calibration_540.yml";}
     if (!ros::param::get("~autoScale", autoScale_)) { autoScale_ = "";}
-    if (!ros::param::get("~markerDistance", markerDistance_)) { markerDistance_ = 1.8;}
+    if (!ros::param::get("~markerDistance", markerDistance_)) { markerDistance_ = 1;}
     if (!ros::param::get("~multipleMarkers", multipleMarkers_)) { multipleMarkers_ = true;}
     if (!ros::param::get("~detectorParams", detectorParams_)) { detectorParams_ = "";}
     if (!ros::param::get("~refine", refine_)) { refine_ = 1;}
@@ -52,8 +52,7 @@ public:
 
     // Subscrive to input video feed and publish output video feed
     image_sub_ = it_.subscribe("/usb_cam/image_raw", 10, &ArucoDetectorROSWrapper::callbakPosition, this);
-    // 변환된 이미지를 publish하는 코드로 생략 가능
-    image_pub_ = it_.advertise("/image_converter/output_video", 10);
+    // image_pub_ = it_.advertise("/image_converter/output_video", 10);
     pose_pub_ = nh->advertise<geometry_msgs::Pose2D>("/camera_pos", 10);
   }
 
@@ -91,10 +90,9 @@ public:
     camera_pose_.y = camPosMean_[1];
     camera_pose_.theta = camYaw_;
 
-    // image를 publish하는 코드 생략 가능
+    // image 생성하는 코드
     Mat imageCopy;
     aruco_detector_->drawResults(cv_ptr->image, imageCopy, rvecs_, tvecs_, markerIds_, markerCorners_, rejectedMarkers_, diamondIds_, diamondCorners_);
-    
     image_pub_.publish(cv_ptr->toImageMsg());
     pose_pub_.publish(camera_pose_);
   }

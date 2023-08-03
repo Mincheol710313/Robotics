@@ -61,3 +61,10 @@ target_link_libraries(
   ${OpenCV_LIBS}
   ${cv_bridge_LIBRARIES}
 )
+
+add_executable(camera_pos_filter src/camera_pos_filter.cpp)
+
+target_link_libraries(
+  camera_pos_filter
+  ${catkin_LIBRARIES}
+)

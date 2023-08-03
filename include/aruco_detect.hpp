@@ -33,7 +33,7 @@ public:
 
         // DetectorParms initialize
         detectorParams = aruco::DetectorParameters::create();
-        setDetectParams(detectorParams, refine);
+        // setDetectParams(detectorParams, dp, refine);
 
         // Camera initialize
         camId = ci;
@@ -56,7 +56,7 @@ public:
 
     bool isStringNonEmpty(const string& str) { return !(str.empty()); }
 
-    void setDetectParams(Ptr<aruco::DetectorParameters>& detectorParams, const int& refine) {
+    void setDetectParams(Ptr<aruco::DetectorParameters>& detectorParams, const string& dp, const int& refine) {
         if(refine){
             detectorParams->cornerRefinementMethod = refine;
         }
@@ -67,6 +67,14 @@ public:
             int dictionaryId = d;
             dictionary = aruco::getPredefinedDictionary(aruco::PREDEFINED_DICTIONARY_NAME(dictionaryId));
         }
+        // else if(isStringNonEmpty(cd)){
+        //     FileStorage fs(cd, FileStorage::READ);
+        //     bool readOk = dictionary->aruco::Dictionary::readDictionary(fs.root());
+        //     if(!readOk){
+        //         cerr << "Invalid dictionary file" << endl;
+        //         exit(-1);
+        //     }
+        // }
         else {
             cerr << "Dictionary not specified" << endl;
             exit(-1);
