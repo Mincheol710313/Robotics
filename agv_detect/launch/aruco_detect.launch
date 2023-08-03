@@ -3,7 +3,7 @@
         <param name="squareLength" type="double" value="0.062"/>
         <param name="markerLength" type="double" value="0.0496"/>
         <param name="showRejected" type="string" value=""/>
-        <param name="estimatePose" type="string" value="/home/godssi/catkin_ws/src/agv_detect/include/calibration_540.yml"/>
+        <param name="estimatePose" type="string" value="/home/jaewoong/catkin_ws/src/rowain_agv/agv_detect/include/calibration_540.yml"/>
         <param name="autoScale" type="string" value=""/>
         <param name="markerDistance" type="double" value="1.8"/>
         <param name="multipleMarkers" type="bool" value="true"/>
@@ -18,14 +18,16 @@
     <node pkg="agv_detect" type="camera_tf_broadcaster" name="camera_tf_broadcaster"/>
     <node pkg="agv_detect" type="agv_tf_broadcaster" name="agv_tf_broadcaster"/>
     <node pkg="agv_detect" type="agv_tf_listener" name="agv_tf_listener"/>
+    <node pkg="agv_detect" type="camera_pos_filter" name="camera_pos_filter"  output="screen"/>
     
     <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
    	<param name="video_device" value="/dev/video4" />
-    <param name="image_width" value="960" />
-    <param name="image_height" value="540" />
-    <param name="framerate" value="60" />
-    <param name="pixel_format" value="yuyv" />
-    <param name="color_format" value="yuv422p" />
-    <param name="camera_frame_id" value="usb_cam" />
+    	<param name="image_width" value="960" />
+    	<param name="image_height" value="540" />
+        <param name="framerate" value="60" />
+    	<param name="pixel_format" value="yuyv" />
+    	<param name="color_format" value="yuv422p" />
+    	<param name="camera_frame_id" value="usb_cam" />
+  	<param name="io_method" value="mmap"/>
   </node>
 </launch>
