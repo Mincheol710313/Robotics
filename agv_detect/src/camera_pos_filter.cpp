@@ -74,7 +74,7 @@ public:
 
         // Check if the variances are greater than a threshold, then publish 0 for x, y, and theta
         double variance_threshold = 0.35; // Set your desired threshold here
-        std::cout << variances[0] << ", " << variances[1] << std::endl;
+        // std::cout << variances[0] << ", " << variances[1] << std::endl;
         if (variances[0] >= variance_threshold || variances[1] >= variance_threshold)
         {
             geometry_msgs::Pose2D filter_msg;
@@ -101,7 +101,7 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "camera_pos_filter");
     CameraPosFilter filter;
-    ros::Rate loop_rate(50);
+    ros::Rate loop_rate(60);
     while (ros::ok())
     {
         ros::spinOnce();

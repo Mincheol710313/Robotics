@@ -36,7 +36,7 @@ public:
   {
     if (!ros::param::get("~squareLength", squareLength_)) { squareLength_ = 0.062;}
     if (!ros::param::get("~markerLength", markerLength_)) { markerLength_ = 0.0496;}
-    if (!ros::param::get("~showRejected", showRejected_)) { showRejected_ = "false";}
+    if (!ros::param::get("~showRejected", showRejected_)) { showRejected_ = "";}
     if (!ros::param::get("~estimatePose", estimatePose_)) { estimatePose_ = "/home/godssi/catkin_ws/src/agv_detect/include/calibration_540.yml";}
     if (!ros::param::get("~autoScale", autoScale_)) { autoScale_ = "";}
     if (!ros::param::get("~markerDistance", markerDistance_)) { markerDistance_ = 1.8;}

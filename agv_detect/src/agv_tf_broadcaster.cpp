@@ -8,7 +8,7 @@ int main(int argc, char** argv){
   tf::TransformBroadcaster br;
   tf::Transform transform;
 
-  ros::Rate rate(10.0);
+  ros::Rate rate(60.0);
   while (node.ok()){
     transform.setOrigin( tf::Vector3(-0.4, -0.0325, 0.0) );
     transform.setRotation( tf::Quaternion(0, 0, 0, 1) );

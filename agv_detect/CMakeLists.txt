@@ -35,6 +35,15 @@ target_link_libraries(
   ${cv_bridge_LIBRARIES}
 )
 
+add_executable(camera_pos_filter src/camera_pos_filter.cpp)
+
+target_link_libraries(
+  camera_pos_filter
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+  ${cv_bridge_LIBRARIES}
+)
+
 add_executable(camera_tf_broadcaster src/camera_tf_broadcaster.cpp)
 
 target_link_libraries(
@@ -60,11 +69,4 @@ target_link_libraries(
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
   ${cv_bridge_LIBRARIES}
-)
-
-add_executable(camera_pos_filter src/camera_pos_filter.cpp)
-
-target_link_libraries(
-  camera_pos_filter
-  ${catkin_LIBRARIES}
 )

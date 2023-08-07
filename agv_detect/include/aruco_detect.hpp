@@ -206,10 +206,6 @@ public:
         if(markerIds.size() > 0)
             aruco::drawDetectedMarkers(imageCopy, markerCorners);
 
-
-        if(showRejected && rejectedMarkers.size() > 0)
-            aruco::drawDetectedMarkers(imageCopy, rejectedMarkers, noArray(), Scalar(100, 0, 255));
-
         if(diamondIds.size() > 0) {
             aruco::drawDetectedDiamonds(imageCopy, diamondCorners, diamondIds);
 
@@ -225,7 +221,6 @@ public:
         // char key = (char)waitKey(1);
         // if(key == 27) exit(-1);
     }
-    
 
 private:
     float squareLength;
