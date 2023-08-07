@@ -42,14 +42,12 @@ public:
                                                                     0, 0,  // xd
                                                                     0, 0,  // yd
                                                                     0, 1); // w
-        cv::setIdentity(kf.processNoiseCov, cv::Scalar::all(1e-4));     // Q
-        cv::setIdentity(kf.measurementNoiseCov, cv::Scalar::all(1));   // R
+        cv::setIdentity(kf.processNoiseCov, cv::Scalar::all(5));     // Q
+        cv::setIdentity(kf.measurementNoiseCov, cv::Scalar::all(0.5));   // R
         cv::setIdentity(kf.errorCovPost, cv::Scalar::all(1));           // P
     }
     
     void setPosData(cv::Mat data) { posData = cv::Mat_<float>(data); }
-    void setCameraPosData(cv::Mat data) { cameraPosData = cv::Mat_<float>(data); }
-    cv::Mat_<float> getCameraPosData() const { return cameraPosData; }
     void setVelData(cv::Mat data) { velData = cv::Mat_<float>(data); }
     void setCommand(cv::Mat data) { command = cv::Mat_<float>(data); }
     void setReceived(bool data) { received = data; }
@@ -102,7 +100,6 @@ private:
     float dt;
     bool received;
 
-    cv::Mat_<float> cameraPosData;
     cv::Mat_<float> posData;
     cv::Mat_<float> velData;
     cv::Mat_<float> command;
