@@ -2,7 +2,9 @@
 #include "aruco_detect.hpp"
 #include <image_transport/image_transport.h> // image를 subscribe 혹은 publish 할 때 사용
 #include <sensor_msgs/image_encodings.h>
-#include <cv_bridge/cv_bridge.h> // sensor_image로 들어오는 것을 OpenCV로 처리할 수 있게 image 파일을 바꾸는 용도로 사용 
+#include <cv_bridge/cv_bridge.h> // sensor_image로 들어오는 것을 OpenCV로 처리할 수 있게 image 파일을 바꾸는 용도로 사용
+#include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 #include <geometry_msgs/Pose2D.h>
 
 class ArucoDetectorROSWrapper
@@ -12,8 +14,14 @@ private:
   image_transport::ImageTransport it_; 
   image_transport::Subscriber image_sub_;
   image_transport::Publisher image_pub_;
-  ros::Publisher pose_pub_;
-  ros::Timer estimated_position_timer_;
+  tf::Transform camera_transform_;
+  tf::Transform agv_transform_;
+  ros::Publisher camera_pose_pub_;
+  ros::Publisher marker_pos_pub_;
+  ros::Subscriber camera_pos_sub_;
+  tf::TransformListener listener;
+  ros::Timer agv_tf_broadcaster_timer_;
+  ros::Timer agv_pose_timer_;
 
   float squareLength_;
   float markerLength_;
@@ -53,8 +61,12 @@ public:
     // Subscrive to input video feed and publish output video feed
     image_sub_ = it_.subscribe("/usb_cam/image_raw", 10, &ArucoDetectorROSWrapper::callbakPosition, this);
     // 변환된 이미지를 publish하는 코드로 생략 가능
-    image_pub_ = it_.advertise("/image_converter/output_video", 10);
-    pose_pub_ = nh->advertise<geometry_msgs::Pose2D>("/camera_pos", 10);
+    image_pub_ = it_.advertise("/convert_image", 10);
+    camera_pose_pub_ = nh->advertise<geometry_msgs::Pose2D>("/camera_pos", 10);
+    camera_pos_sub_ = nh->subscribe("/camera_pos", 10, &ArucoDetectorROSWrapper::cameraPoseCallback, this);
+    marker_pos_pub_ = nh->advertise<geometry_msgs::Pose2D>("/marker_pos", 10);
+    agv_tf_broadcaster_timer_ = nh->createTimer(ros::Duration(1.0 / 60.0),&ArucoDetectorROSWrapper::agvTfBroadCaster, this);
+    agv_pose_timer_ = nh->createTimer(ros::Duration(1.0 / 60.0),&ArucoDetectorROSWrapper::publishMarkerPos, this);
   }
 
   void callbakPosition(const sensor_msgs::ImageConstPtr& msg)
@@ -96,7 +108,53 @@ public:
     aruco_detector_->drawResults(cv_ptr->image, imageCopy, rvecs_, tvecs_, markerIds_, markerCorners_, rejectedMarkers_, diamondIds_, diamondCorners_);
     image_pub_.publish(cv_bridge::CvImage(std_msgs::Header(), "bgr8", imageCopy).toImageMsg());
 
-    pose_pub_.publish(camera_pose_);
+    camera_pose_pub_.publish(camera_pose_);
+  }
+
+  void cameraPoseCallback(const geometry_msgs::Pose2D::ConstPtr& msg) {
+    static tf::TransformBroadcaster br;
+    camera_transform_.setOrigin( tf::Vector3(msg->x, msg->y, 0.0) );
+    tf::Quaternion q;
+    q.setRPY(0, 0, msg->theta);
+    camera_transform_.setRotation(q);
+    br.sendTransform(tf::StampedTransform(camera_transform_, ros::Time::now(), "world", "camera_tf"));
+  }
+
+  void agvTfBroadCaster(const ros::TimerEvent &event) {
+    static tf::TransformBroadcaster br;
+    agv_transform_.setOrigin( tf::Vector3(-0.4, -0.0325, 0.0) );
+    agv_transform_.setRotation( tf::Quaternion(0, 0, 0, 1) );
+    br.sendTransform(tf::StampedTransform(agv_transform_, ros::Time::now(), "camera_tf", "agv_tf"));
+  }
+
+  void publishMarkerPos(const ros::TimerEvent &event) {
+    tf::StampedTransform transform;
+    try{
+      if(camera_transform_.getOrigin().x() == 0 && camera_transform_.getOrigin().y() == 0){
+        geometry_msgs::Pose2D marker_pos;
+        marker_pos.x = 0;
+        marker_pos.y = 0;
+        marker_pos.theta = 0;
+
+        marker_pos_pub_.publish(marker_pos);
+      }
+      else{
+        listener.waitForTransform("world", "agv_tf", ros::Time(0), ros::Duration(0));
+        listener.lookupTransform("world", "agv_tf", ros::Time(0), transform);
+      
+        // 불러온 pose 값을 geometry_msgs::Pose2D 형태로 변환합니다.
+        geometry_msgs::Pose2D marker_pos; 
+        marker_pos.x = transform.getOrigin().x();
+        marker_pos.y = transform.getOrigin().y();
+        marker_pos.theta = tf::getYaw(transform.getRotation());
+
+        // 변환한 pose 값을 /agv_pose로 publish합니다.
+        marker_pos_pub_.publish(marker_pos);
+      }
+    }
+    catch (tf::TransformException &ex) {
+      ROS_ERROR("%s",ex.what());
+    }
   }
 };
 

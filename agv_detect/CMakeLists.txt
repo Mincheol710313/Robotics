@@ -43,30 +43,3 @@ target_link_libraries(
   ${OpenCV_LIBS}
   ${cv_bridge_LIBRARIES}
 )
-
-add_executable(camera_tf_broadcaster src/camera_tf_broadcaster.cpp)
-
-target_link_libraries(
-  camera_tf_broadcaster
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBS}
-  ${cv_bridge_LIBRARIES}
-)
-
-add_executable(agv_tf_broadcaster src/agv_tf_broadcaster.cpp)
-
-target_link_libraries(
-  agv_tf_broadcaster
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBS}
-  ${cv_bridge_LIBRARIES}
-)
-
-add_executable(agv_tf_listener src/agv_tf_listener.cpp)
-
-target_link_libraries(
-  agv_tf_listener
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBS}
-  ${cv_bridge_LIBRARIES}
-)
