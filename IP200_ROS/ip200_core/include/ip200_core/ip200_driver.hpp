@@ -22,10 +22,10 @@ namespace aidl
 	class ip200BodyNode
 	{
 	private:
-		enum {COMPUTE_ODOMETRY_FREQUENCY = 100};
-		enum {PUBLISH_CURRENT_ODOMETRY_FREQUENCY = 100};
-		enum {PUBLISH_CMD_RPM_FREQUENCY = 100};
-		enum {PUBLISH_CUR_VEL_FREQUENCY = 50};
+		enum {COMPUTE_ODOMETRY_FREQUENCY = 300};
+		enum {PUBLISH_CURRENT_ODOMETRY_FREQUENCY = 300};
+		enum {PUBLISH_CMD_RPM_FREQUENCY = 300};
+		enum {PUBLISH_CUR_VEL_FREQUENCY = 300};
 
 		double x_, y_, th_, vx_, vy_, vth_;
 		double cur_x_, cur_y_, cur_th_,
