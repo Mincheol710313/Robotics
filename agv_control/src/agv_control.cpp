@@ -33,7 +33,7 @@ public:
         if (!ros::param::get("~toleranceAngular", toleranceAngular_)) { toleranceAngular_ = 0.005; }
         if (!ros::param::get("~linearMax", linearMax_)) { linearMax_ = 0.45; }
         if (!ros::param::get("~AngularMax", AngularMax_)) { AngularMax_ = 1.0; }
-        if (!ros::param::get("~publish_velocity_command_frequency", publish_velocity_command_frequency_)) { publish_velocity_command_frequency_ = 50.0; }
+        if (!ros::param::get("~publish_velocity_command_frequency", publish_velocity_command_frequency_)) { publish_velocity_command_frequency_ = 300.0; }
         if (!ros::param::get("~acc_linear", acc_linear_)) { acc_linear_ = 0.7; }
         if (!ros::param::get("~acc_angluar", acc_angluar_)) { acc_angluar_ = 2.5; }
         if (!ros::param::get("~markerDistance", markerDistance_)) { markerDistance_ = 1.8; }
