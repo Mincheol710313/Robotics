@@ -14,8 +14,6 @@
         <param name="dictionary" type="int" value="3"/>
         <param name="custom_dictionary" type="string" value=""/>
     </node>
-    
-    <node pkg="agv_detect" type="pos_filter" name="pos_filter"/>
 
     <!--
     <node pkg="agv_detect" type="pos_filter" name="pos_filter"/>
