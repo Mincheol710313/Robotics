@@ -43,3 +43,12 @@ target_link_libraries(
   ${OpenCV_LIBS}
   ${cv_bridge_LIBRARIES}
 )
+
+add_executable(pos_filter src/pos_filter.cpp)
+
+target_link_libraries(
+  pos_filter
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+  ${cv_bridge_LIBRARIES}
+)

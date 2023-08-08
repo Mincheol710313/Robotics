@@ -109,8 +109,8 @@ public:
         }
     }
 
-    void setMarkerCornersAndIds(const Mat& image, vector< vector< Point2f > >& markerCorners, vector< int >& markerIds, vector< vector< Point2f > >& rejectedMarkers){
-        aruco::detectMarkers(image, dictionary, markerCorners, markerIds, detectorParams, rejectedMarkers);
+    void setMarkerCornersAndIds(const Mat& image, vector< vector< Point2f > >& markerCorners, vector< int >& markerIds){
+        aruco::detectMarkers(image, dictionary, markerCorners, markerIds);
     }
 
     void detectDiamond(const Mat& image, vector< int >& markerIds, vector< vector< Point2f > >& markerCorners, vector< vector< Point2f > >& diamondCorners, vector< Vec4i >& diamondIds){

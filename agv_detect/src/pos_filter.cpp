@@ -10,7 +10,7 @@ public:
         // Initialize ROS node and subscribers/publishers
         ros::NodeHandle nh_;
         pos_sub_ = nh_.subscribe("marker_pos", 5, &PosFilter::PosCallback, this);
-        filter_pos_pub_ = nh_.advertise<geometry_msgs::Pose2D>("filter_marker_pos", 1);
+        filter_pos_pub_ = nh_.advertise<geometry_msgs::Pose2D>("filter_marker_pos", 10);
 
         // Initialize the queue size to store recent 5 values
         queue_size_ = 5;
@@ -73,7 +73,7 @@ public:
         }
 
         // Check if the variances are greater than a threshold, then publish 0 for x, y, and theta
-        double variance_threshold = 0.35; // Set your desired threshold here
+        double variance_threshold = 0.05; // Set your desired threshold here
         // std::cout << variances[0] << ", " << variances[1] << std::endl;
         
         if (variances[0] >= variance_threshold || variances[1] >= variance_threshold)

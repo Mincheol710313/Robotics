@@ -14,8 +14,11 @@
         <param name="dictionary" type="int" value="3"/>
         <param name="custom_dictionary" type="string" value=""/>
     </node>
+    
+    <node pkg="agv_detect" type="pos_filter" name="pos_filter"/>
 
     <!--
+    <node pkg="agv_detect" type="pos_filter" name="pos_filter"/>
     <node pkg="agv_detect" type="camera_pos_filter" name="camera_pos_filter"/>
     <node pkg="agv_detect" type="camera_tf_broadcaster" name="camera_tf_broadcaster"/>
     <node pkg="agv_detect" type="agv_tf_broadcaster" name="agv_tf_broadcaster"/>
