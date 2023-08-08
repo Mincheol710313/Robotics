@@ -21,7 +21,7 @@ public:
     EstimatorROSWrapper(ros::NodeHandle *nh) {
         if (!ros::param::get("~stateSize", stateSize_)) { stateSize_ = 6; }
         if (!ros::param::get("~contrSize", contrSize_)) { contrSize_ = 2; }
-        if (!ros::param::get("~publish_estimated_position_frequency", publish_estimated_position_frequency_)) { publish_estimated_position_frequency_ = 60.0; }
+        if (!ros::param::get("~publish_estimated_position_frequency", publish_estimated_position_frequency_)) { publish_estimated_position_frequency_ = 300.0; }
 
         estimator.reset(new ESTIMATOR(stateSize_, contrSize_, 1.0 / publish_estimated_position_frequency_));
 
@@ -61,7 +61,8 @@ public:
         float theta = corrected.at<float>(2);
         theta = theta - 2*M_PI*floor((theta+M_PI)/(2*M_PI));
         msg.theta = theta;
-        estimated_position_publisher_.publish(msg); 
+        estimated_position_publisher_.publish(msg);
+        estimator->setReceived(false);
     }
 };
 

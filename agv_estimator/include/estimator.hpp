@@ -1,11 +1,11 @@
-#ifndef ESTIMATOR_HPP
+ #ifndef ESTIMATOR_HPP
 #define ESTIMATOR_HPP
 
 #include <opencv2/opencv.hpp>
 
 class ESTIMATOR {
 public:
-    ESTIMATOR(int state=6, int control=2, float dt_=0.02) {
+    ESTIMATOR(int state=6, int control=2, float dt_= 0.003) {
         stateSize = state;
         measSize_marker = 3;
         measSize_encoder = 2;
