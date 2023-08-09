@@ -95,11 +95,12 @@ public:
     aruco_detector_.reset(new ARUCO_DETECTOR(squareLength_, markerLength_, showRejected_, estimatePose_, autoScale_, markerDistance_, multipleMarkers_, detectorParams_, refine_, camId_, video_, dictionary_, custom_dictionary_));
 
     // Subscrive to input video feed and publish output video feed
-    image_sub_ = it_.subscribe("/usb_cam/image_raw", 10, &ArucoDetectorROSWrapper::callbakPosition, this);
+    image_sub_ = it_.subscribe("/usb_cam/image_raw", 1, &ArucoDetectorROSWrapper::callbakPosition, this);
+    camera_pos_sub_ = nh->subscribe("/camera_pos", 1, &ArucoDetectorROSWrapper::MarkerPositionCallback, this);
     // 변환된 이미지를 publish하는 코드로 생략 가능
-    image_pub_ = it_.advertise("/convert_image", 10);
-    camera_pose_pub_ = nh->advertise<geometry_msgs::Pose2D>("/camera_pos", 10);
-    marker_pos_pub_ = nh->advertise<geometry_msgs::Pose2D>("/marker_pos", 10);
+    image_pub_ = it_.advertise("/convert_image", 1);
+    camera_pose_pub_ = nh->advertise<geometry_msgs::Pose2D>("/camera_pos", 1);
+    marker_pos_pub_ = nh->advertise<geometry_msgs::Pose2D>("/marker_pos", 1);
   }
 
   void callbakPosition(const sensor_msgs::ImageConstPtr &msg)
@@ -124,106 +125,82 @@ public:
     Vec3d camPosMean_;
     Mat camRot_;
     double camYaw_;
-
-    aruco_detector_->setMarkerCornersAndIds(cv_ptr->image, markerCorners_, markerIds_);
-    aruco_detector_->detectDiamond(cv_ptr->image, markerIds_, markerCorners_, diamondCorners_, diamondIds_);
-    aruco_detector_->estimateDiamondPose(rvecs_, tvecs_, diamondCorners_, diamondIds_);
-    aruco_detector_->calculateCameraPose(rvecs_, tvecs_, diamondIds_, camPos_, camRot_, camYaw_);
-    aruco_detector_->calculateMeanPose(camPos_, camPosMean_);
-
     geometry_msgs::Pose2D camera_pose_;
-    camera_pose_.x = camPosMean_[0];
-    camera_pose_.y = camPosMean_[1];
-    camera_pose_.theta = camYaw_;
+
+    try
+    {
+      aruco_detector_->setMarkerCornersAndIds(cv_ptr->image, markerCorners_, markerIds_);
+      aruco_detector_->detectDiamond(cv_ptr->image, markerIds_, markerCorners_, diamondCorners_, diamondIds_);
+      aruco_detector_->estimateDiamondPose(rvecs_, tvecs_, diamondCorners_, diamondIds_);
+      aruco_detector_->calculateCameraPose(rvecs_, tvecs_, diamondIds_, camPos_, camRot_, camYaw_);
+
+      if(!camPos_.empty()){
+        camera_pose_.x = camPos_.at(0)[0];
+        camera_pose_.y = camPos_.at(0)[1];
+        camera_pose_.theta = camYaw_;
+      }
+      else{
+        camera_pose_.x = 0;
+        camera_pose_.y = 0;
+        camera_pose_.theta = 0;
+      }
+    }
+    catch (Exception &e)
+    {
+      ROS_ERROR("Exception: %s", e.what());
+      return;
+    }
 
     // image를 publish하는 코드 생략 가능
     Mat imageCopy;
     aruco_detector_->drawResults(cv_ptr->image, imageCopy, rvecs_, tvecs_, markerIds_, markerCorners_, rejectedMarkers_, diamondIds_, diamondCorners_);
     image_pub_.publish(cv_bridge::CvImage(std_msgs::Header(), "bgr8", imageCopy).toImageMsg());
     camera_pose_pub_.publish(camera_pose_);
+  }
 
-    // marker_pos를 publish하는 코드(tf를 이용하지 않고 pose를 publish하는 코드)
-    // M_PI와 -M_PI를 구분해야 하는 코드가 위에서 구현되어야 한다.-> -M_PI와 M_PI를 같은 각도로 인식해야함.
-    // geometry_msgs::Pose2D marker_pos;
-    // if(camera_pose_.theta >= 0 && camera_pose_.theta < M_PI/2){
-    //   marker_pos.x = camera_pose_.x - 0.4;
-    //   marker_pos.y = camera_pose_.y - 0.0325;
-    // }
-    // else if(camera_pose_.theta >= M_PI/2 && camera_pose_.theta < M_PI){
-    //   marker_pos.x = camera_pose_.x + 0.0325;
-    //   marker_pos.y = camera_pose_.y - 0.4;;
-    // }
-    // else if(camera_pose_.theta = M_PI){
-    //   marker_pos.x = camera_pose_.x + 0.4;
-    //   marker_pos.y = camera_pose_.y + 0.0325;
-    // }
-    // else if(camera_pose_.theta < 0 && camera_pose_.theta >= -M_PI/2){
-    //   marker_pos.x = camera_pose_.x + 0.0325 ;
-    //   marker_pos.y = camera_pose_.y + 0.4;
-    // }
-    // else{
-    //   marker_pos.x = camera_pose_.x + 0.0325;
-    //   marker_pos.y = camera_pose_.y + 0.4;
-    // }
-    // marker_pos.theta = camera_pose_.theta;
-
-    // marker_pos_pub_.publish(marker_pos);
-    // marker_pos_pub_.publish(marker_pos);
-
-    // // camera_tf를 publish하는 코드
-    if (camera_pose_.x != 0 && camera_pose_.y != 0)
+  void MarkerPositionCallback(const geometry_msgs::Pose2D::ConstPtr &msg)
+  {
+    geometry_msgs::Pose2D marker_pose_;
+    if (msg->x == 0 && msg->y == 0)
+    {
+      marker_pose_.x = 0;
+      marker_pose_.y = 0;
+      marker_pose_.theta = 0;
+    }
+    else
     {
       static tf::TransformBroadcaster br;
-      tf::Transform camera_transform_;
-      camera_transform_.setOrigin(tf::Vector3(camera_pose_.x, camera_pose_.y, 0.0));
+      tf::Transform camera_transform;
+      camera_transform.setOrigin(tf::Vector3(msg->x, msg->y, 0.0));
       tf::Quaternion q;
-      q.setRPY(0, 0, camera_pose_.theta);
-      camera_transform_.setRotation(q);
-      br.sendTransform(tf::StampedTransform(camera_transform_, ros::Time::now(), "world", "camera_tf"));
+      q.setRPY(0, 0, msg->theta);
+      camera_transform.setRotation(q);
+      br.sendTransform(tf::StampedTransform(camera_transform, ros::Time::now(), "world", "camera_tf"));
 
-      // agv_tf를 publish하는 코드
       static tf::TransformBroadcaster br2;
-      tf::Transform agv_transform_;
-      agv_transform_.setOrigin(tf::Vector3(-0.4, -0.0325, 0.0));
+      tf::Transform agv_transform;
+      agv_transform.setOrigin(tf::Vector3(-0.4, -0.0325, 0.0));
       tf::Quaternion q2;
       q2.setRPY(0, 0, 0);
-      agv_transform_.setRotation(q2);
-      br2.sendTransform(tf::StampedTransform(agv_transform_, ros::Time::now(), "camera_tf", "agv_tf"));
+      agv_transform.setRotation(q2);
+      br2.sendTransform(tf::StampedTransform(agv_transform, ros::Time::now(), "camera_tf", "agv_tf"));
 
-      // marker_pos를 publish하는 코드
       tf::StampedTransform transform;
       try
       {
-        listener.waitForTransform("world", "agv_tf", ros::Time(0), ros::Duration(3.0));
         listener.lookupTransform("world", "agv_tf", ros::Time(0), transform);
 
-        // 불러온 pose 값을 geometry_msgs::Pose2D 형태로 변환합니다.
-        geometry_msgs::Pose2D marker_pos;
-        marker_pos.x = transform.getOrigin().x();
-        marker_pos.y = transform.getOrigin().y();
-        marker_pos.theta = tf::getYaw(transform.getRotation());
-
-        // if(marker_pos.x <= -0.4 || marker_pos.x <= -0.0325 || marker_pos.y <= -0.4 || marker_pos.y <= -0.0325){
-        //   marker_pos.x = 0;
-        //   marker_pos.y = 0;
-        //   marker_pos.theta = 0;
-        // }
-
-        // 변환한 pose 값을 /agv_pose로 publish합니다.
-        marker_pos_pub_.publish(marker_pos);
+        marker_pose_.x = transform.getOrigin().x();
+        marker_pose_.y = transform.getOrigin().y();
+        marker_pose_.theta = tf::getYaw(transform.getRotation());
       }
       catch (tf::TransformException &ex)
       {
         ROS_ERROR("%s", ex.what());
+        ros::Duration(1.0).sleep();
       }
     }
-    else{
-      geometry_msgs::Pose2D marker_pos;
-      marker_pos.x = 0;
-      marker_pos.y = 0;
-      marker_pos.theta = 0;
-      marker_pos_pub_.publish(marker_pos);
-    }
+    marker_pos_pub_.publish(marker_pose_);
   }
 };
 
@@ -232,7 +209,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "aruco_detect");
   ros::NodeHandle nh;
 
-  ros::AsyncSpinner spinner(1);
+  ros::AsyncSpinner spinner(4);
   spinner.start();
 
   ArucoDetectorROSWrapper arucoDetectorWrapper(&nh);
