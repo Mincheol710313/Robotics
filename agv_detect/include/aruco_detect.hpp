@@ -197,38 +197,6 @@ public:
         }
     }
 
-    // void calculateMeanPose(vector<Vec3d> &camPos, Vec3d &camPosMean)
-    // {
-    //     printf("__%d__\n", __LINE__);
-    //     if (camPos.empty()) return;
-    //     if (camPos.size() > 0 && multipleMarkers)
-    //     {
-    //         // Separate the dimensions into individual Mat objects
-    //         cv::Mat xMeasurements(camPos.size(), 1, CV_64F);
-    //         cv::Mat yMeasurements(camPos.size(), 1, CV_64F);
-    //         cv::Mat zMeasurements(camPos.size(), 1, CV_64F);
-    //         for (int i = 0; i < camPos.size(); i++)
-    //         {
-    //             xMeasurements.at<double>(i) = camPos[i][0];
-    //             yMeasurements.at<double>(i) = camPos[i][1];
-    //             zMeasurements.at<double>(i) = camPos[i][2];
-    //         }
-
-    //         // Use meanStdDev to calculate mean and standard deviation for each dimension
-    //         cv::Mat meanX, meanY, meanZ, stddevX, stddevY, stddevZ;
-    //         cv::meanStdDev(xMeasurements, meanX, stddevX);
-    //         cv::meanStdDev(yMeasurements, meanY, stddevY);
-    //         cv::meanStdDev(zMeasurements, meanZ, stddevZ);
-    //         camPosMean = {meanX.at<double>(0, 0), meanY.at<double>(0, 0), meanZ.at<double>(0, 0)};
-
-    //         // cout << "mean: " << camPosMean << endl;
-    //         // cout << "standard deviation: " << stddevX.at<double>(0, 0) << ", " << stddevY.at<double>(0, 0) << ",  " << stddevZ.at<double>(0, 0) << endl;
-    //     }
-    // }
-
-    // void calculateDetectTime(){
-
-    // }
 
     void drawResults(Mat &image, Mat &imageCopy, vector<Vec3d> &rvecs, vector<Vec3d> &tvecs, vector<int> &markerIds, vector<vector<Point2f>> &markerCorners, vector<vector<Point2f>> &rejectedMarkers, vector<Vec4i> &diamondIds, vector<vector<Point2f>> &diamondCorners)
     {
@@ -247,11 +215,6 @@ public:
                                       squareLength * 1.1f);
             }
         }
-
-        // namedWindow(OPENCV_WINDOW, WINDOW_NORMAL);
-        // imshow(OPENCV_WINDOW, imageCopy);
-        // char key = (char)waitKey(1);
-        // if(key == 27) exit(-1);
     }
 
 private:
