@@ -14,12 +14,10 @@ private:
   image_transport::ImageTransport it_;
   image_transport::Subscriber image_sub_;
   image_transport::Publisher image_pub_;
-  tf::Transform agv_transform_;
   ros::Publisher camera_pose_pub_;
   ros::Publisher marker_pos_pub_;
   ros::Subscriber camera_pos_sub_;
   tf::TransformListener listener;
-  ros::Timer process_timer_;
 
   float squareLength_;
   float markerLength_;
@@ -35,10 +33,6 @@ private:
   string video_;
   int dictionary_;
   string custom_dictionary_;
-
-  float process_frequency_;
-
-  Mat image_;
 
 public:
   ArucoDetectorROSWrapper(ros::NodeHandle *nh)
@@ -96,40 +90,32 @@ public:
     {
       custom_dictionary_ = "";
     }
-    if (!ros::param::get("~process_frequency", process_frequency_))
-    {
-      process_frequency_ = 30;
-    }
 
     aruco_detector_.reset(new ARUCO_DETECTOR(squareLength_, markerLength_, showRejected_, estimatePose_, autoScale_, markerDistance_, multipleMarkers_, detectorParams_, refine_, camId_, video_, dictionary_, custom_dictionary_));
 
     // Subscrive to input video feed and publish output video feed
-    image_sub_ = it_.subscribe("/usb_cam/image_raw", 1, &ArucoDetectorROSWrapper::callbackImage, this);
-    camera_pos_sub_ = nh->subscribe("/camera_pos", 1, &ArucoDetectorROSWrapper::MarkerPositionCallback, this);
+    image_sub_ = it_.subscribe("/usb_cam/image_raw", 1, &ArucoDetectorROSWrapper::callbakPosition, this);
+    // camera_pos_sub_ = nh->subscribe("/camera_pos", 1, &ArucoDetectorROSWrapper::MarkerPositionCallback, this);
     // 변환된 이미지를 publish하는 코드로 생략 가능
     image_pub_ = it_.advertise("/convert_image", 1);
     camera_pose_pub_ = nh->advertise<geometry_msgs::Pose2D>("/camera_pos", 1);
     marker_pos_pub_ = nh->advertise<geometry_msgs::Pose2D>("/marker_pos", 1);
-    process_timer_ = nh->createTimer(ros::Duration(1 / process_frequency_), &ArucoDetectorROSWrapper::processImage, this);
   }
 
-  void callbackImage(const sensor_msgs::ImageConstPtr &msg)
+  void callbakPosition(const sensor_msgs::ImageConstPtr &msg)
   {
+    cv_bridge::CvImagePtr cv_ptr;
+    try
+    {
+      cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    }
+    catch (cv_bridge::Exception &e)
+    {
+      ROS_ERROR("cv_bridge exception: %s", e.what());
+      return;
+    }
+
     // 받아온 이미지를 통해서 pose를 계산하는 코드
-    const uint8_t *image_data = msg->data.data();
-
-    // 이미지의 높이와 너비 추출
-    int image_height = msg->height;
-    int image_width = msg->width;
-
-    // 이미지 데이터를 OpenCV의 Mat 형식으로 변환
-    Mat image(image_height, image_width, CV_8UC3, const_cast<uint8_t *>(image_data));
-
-    image_ = image;
-  }
-
-  void processImage(const ros::TimerEvent &event)
-  {
     vector<Vec3d> rvecs_, tvecs_;
     vector<int> markerIds_;
     vector<Vec4i> diamondIds_;
@@ -142,19 +128,17 @@ public:
 
     try
     {
-      aruco_detector_->setMarkerCornersAndIds(image_, markerCorners_, markerIds_);
-      aruco_detector_->detectDiamond(image_, markerIds_, markerCorners_, diamondCorners_, diamondIds_);
+      aruco_detector_->setMarkerCornersAndIds(cv_ptr->image, markerCorners_, markerIds_);
+      aruco_detector_->detectDiamond(cv_ptr->image, markerIds_, markerCorners_, diamondCorners_, diamondIds_);
       aruco_detector_->estimateDiamondPose(rvecs_, tvecs_, diamondCorners_, diamondIds_);
       aruco_detector_->calculateCameraPose(rvecs_, tvecs_, diamondIds_, camPos_, camRot_, camYaw_);
 
-      if (!camPos_.empty())
-      {
+      if(!camPos_.empty()){
         camera_pose_.x = camPos_.at(0)[0];
         camera_pose_.y = camPos_.at(0)[1];
         camera_pose_.theta = camYaw_;
       }
-      else
-      {
+      else{
         camera_pose_.x = 0;
         camera_pose_.y = 0;
         camera_pose_.theta = 0;
@@ -168,11 +152,27 @@ public:
 
     // image를 publish하는 코드 생략 가능
     Mat imageCopy;
-    aruco_detector_->drawResults(image_, imageCopy, rvecs_, tvecs_, markerIds_, markerCorners_, rejectedMarkers_, diamondIds_, diamondCorners_);
+    aruco_detector_->drawResults(cv_ptr->image, imageCopy, rvecs_, tvecs_, markerIds_, markerCorners_, rejectedMarkers_, diamondIds_, diamondCorners_);
     image_pub_.publish(cv_bridge::CvImage(std_msgs::Header(), "bgr8", imageCopy).toImageMsg());
     camera_pose_pub_.publish(camera_pose_);
+
+    geometry_msgs::Pose2D marker_pose_;
+    if (camera_pose_.x == 0 && camera_pose_.y == 0 && camera_pose_.theta == 0)
+    {
+      marker_pose_.x = 0;
+      marker_pose_.y = 0;
+      marker_pose_.theta = 0;
+    }
+    else
+    {
+      marker_pose_.x = camera_pose_.x - 0.4 * cos(camera_pose_.theta) + 0.0325 * sin(camera_pose_.theta);
+      marker_pose_.y = camera_pose_.y - 0.4 * sin(camera_pose_.theta) - 0.0325 * cos(camera_pose_.theta);
+      marker_pose_.theta = camera_pose_.theta;
+    }
+    marker_pos_pub_.publish(marker_pose_);
   }
 
+  /*
   void MarkerPositionCallback(const geometry_msgs::Pose2D::ConstPtr &msg)
   {
     geometry_msgs::Pose2D marker_pose_;
@@ -203,6 +203,7 @@ public:
       tf::StampedTransform transform;
       try
       {
+        listener.waitForTransform("world", "agv_tf", ros::Time(0), ros::Duration(0));
         listener.lookupTransform("world", "agv_tf", ros::Time(0), transform);
 
         marker_pose_.x = transform.getOrigin().x();
@@ -217,6 +218,7 @@ public:
     }
     marker_pos_pub_.publish(marker_pose_);
   }
+  */
 };
 
 int main(int argc, char **argv)

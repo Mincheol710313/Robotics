@@ -15,7 +15,6 @@
         <param name="custom_dictionary" type="string" value=""/>
     </node>
 
-
     <!--
     <node pkg="agv_detect" type="pos_filter" name="pos_filter"/>
     <node pkg="agv_detect" type="camera_pos_filter" name="camera_pos_filter"/>
@@ -26,12 +25,11 @@
     
     <node name="usb_cam" pkg="usb_cam" type="usb_cam_node" output="screen" >
    	  <param name="video_device" value="/dev/video4" />
-      <param name="image_width" value="640" />
-      <param name="image_height" value="480" />
+      <param name="image_width" value="960" />
+      <param name="image_height" value="540" />
       <param name="framerate" value="60" />
-      <param name="pixel_format" value="yuyv"/>
-      <!--<param name="color_format" value="yuv422p" />-->
+      <param name="pixel_format" value="yuyv" />
+      <param name="color_format" value="yuv422p" />
       <param name="camera_frame_id" value="usb_cam" />
-      <param name="io_method" value="mmap"/>
     </node>
 </launch>
