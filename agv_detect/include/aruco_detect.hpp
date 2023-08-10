@@ -58,6 +58,8 @@ public:
         autoScaleFactor = autoScale ? stof(as) : 1.f;
         markerDistance = md;
         multipleMarkers = mm;
+        pastX = 0.0;
+        pastY = 0.0;
 
         // DetectorParms initialize
         detectorParams = aruco::DetectorParameters::create();
@@ -168,11 +170,35 @@ public:
 
             // Invert transformations
             Mat R_btoc = R_ctob.t();       // Marker-to-camera rotation matrix
-            Mat T_btoc = -R_btoc * T_ctob; // Marker-to-camera translation vector
+            Mat T_btoc = - R_btoc * T_ctob; // Marker-to-camera translation vector
 
             // Assume marker's absolute position is known and stored in absoluteMarkerPos
-            double markerPosX = static_cast<double>((diamondIds[i].val[0] * 32 + diamondIds[i].val[1]) * markerDistance);
-            double markerPosY = static_cast<double>((diamondIds[i].val[2] * 32 + diamondIds[i].val[3]) * markerDistance);
+            curX = static_cast<double>(diamondIds[i].val[0] * 32 + diamondIds[i].val[1]);
+            curY = static_cast<double>(diamondIds[i].val[2] * 32 + diamondIds[i].val[3]);
+
+            if (pastX == 0.0 && pastY == 0.0) // 초기값일 때 현재 좌표를 저장
+            {
+                pastX = curX;
+                pastY = curY;
+            }
+            else if (abs(curX - pastX) <= 1 && abs(curY - pastY) == 0)
+            {
+                pastX = curX;
+                pastY = curY;
+            }
+            else if (abs(curX - pastX) == 0 && abs(curY - pastY) <= 1)
+            {
+                pastX = curX;
+                pastY = curY;
+            }
+            else
+            {
+                curX = 0;
+                curY = 0;
+            }
+            // cout << "저장된 좌표: " << pastX << "," << pastY << endl;
+            double markerPosX = curX * markerDistance;
+            double markerPosY = curY * markerDistance;
             double markerPosZ = 0;
             Mat absoluteMarkerPos = (Mat_<double>(3, 1) << markerPosX, markerPosY, markerPosZ); // Marker's absolute position
             Mat R_m = Mat::eye(3, 3, CV_64F);                                                   // Marker's rotation matrix (identity because it's flat)
@@ -194,6 +220,7 @@ public:
             yaw_x = fmod(yaw_x + M_PI, 2 * M_PI) - M_PI;
 
             camYaw = yaw_x;
+
         }
     }
 
@@ -226,6 +253,10 @@ private:
     float autoScaleFactor;
     float markerDistance;
     bool multipleMarkers;
+    double curX;
+    double curY;
+    double pastX;
+    double pastY;
 
     Ptr<aruco::DetectorParameters> detectorParams;
 
