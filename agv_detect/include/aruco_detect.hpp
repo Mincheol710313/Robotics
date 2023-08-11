@@ -135,7 +135,7 @@ public:
             aruco::detectCharucoDiamond(image, markerCorners, markerIds, squareLength / markerLength, diamondCorners, diamondIds, camMatrix, distCoeffs);
     }
 
-    void estimateDiamondPose(vector<Vec3d> &rvecs, vector<Vec3d> &tvecs, vector<vector<Point2f>> &diamondCorners, vector<Vec4i> &diamondIds)
+    void estimateDiamondPose(Vec3d &rvec, Vec3d &tvec, vector<vector<Point2f>> &diamondCorners, vector<Vec4i> &diamondIds)
     {
         if (isStringNonEmpty(estimatePose) && diamondIds.size() > 0)
         {
@@ -149,83 +149,82 @@ public:
                     float squareLength = autoScaleFactor * float(diamondIds[i].val[3]);
                 aruco::estimatePoseSingleMarkers(currentCorners, squareLength, camMatrix,
                                                  distCoeffs, currentRvec, currentTvec);
-                rvecs.push_back(currentRvec[0]);
-                tvecs.push_back(currentTvec[0]);
+                rvec = currentRvec[0];
+                tvec = currentTvec[0];
             }
         }
     }
 
-    void calculateCameraPose(vector<Vec3d> &rvecs, vector<Vec3d> &tvecs, vector<Vec4i> &diamondIds, vector<Vec3d> &camPos, Mat &camRot, double &camYaw)
+    void calculateCameraPose(Vec3d &rvec, Vec3d &tvec, vector<Vec4i> &diamondIds, vector<Vec3d> &camPos, Mat &camRot, double &camYaw)
     {
-        if (rvecs.empty() || tvecs.empty() || diamondIds.empty())
+        if (diamondIds.empty())
         {
             return; // Exit the function if any of the required vectors are empty
         }
-        for (unsigned int i = 0; i < rvecs.size(); ++i)
+
+        Mat R_ctob;
+        Rodrigues(rvec, R_ctob); // Camera-to-marker rotation matrix
+
+        Mat T_ctob = Mat(tvec); // Camera-to-marker translation vector
+
+        // Invert transformations
+        Mat R_btoc = R_ctob.t();       // Marker-to-camera rotation matrix
+        Mat T_btoc = -R_btoc * T_ctob; // Marker-to-camera translation vector
+
+        // Assume marker's absolute position is known and stored in absoluteMarkerPos
+        curX = static_cast<double>(diamondIds[0].val[0] * 32 + diamondIds[0].val[1]);
+        curY = static_cast<double>(diamondIds[0].val[2] * 32 + diamondIds[0].val[3]);
+
+        if (pastX == 0.0 && pastY == 0.0) // 초기값일 때 현재 좌표를 저장
         {
-            Mat R_ctob, rvec = Mat(rvecs[i]);
-            Rodrigues(rvec, R_ctob); // Camera-to-marker rotation matrix
-
-            Mat T_ctob = Mat(tvecs[i]); // Camera-to-marker translation vector
-
-            // Invert transformations
-            Mat R_btoc = R_ctob.t();       // Marker-to-camera rotation matrix
-            Mat T_btoc = - R_btoc * T_ctob; // Marker-to-camera translation vector
-
-            // Assume marker's absolute position is known and stored in absoluteMarkerPos
-            curX = static_cast<double>(diamondIds[i].val[0] * 32 + diamondIds[i].val[1]);
-            curY = static_cast<double>(diamondIds[i].val[2] * 32 + diamondIds[i].val[3]);
-
-            if (pastX == 0.0 && pastY == 0.0) // 초기값일 때 현재 좌표를 저장
-            {
-                pastX = curX;
-                pastY = curY;
-            }
-            else if (abs(curX - pastX) <= 1 && abs(curY - pastY) == 0)
-            {
-                pastX = curX;
-                pastY = curY;
-            }
-            else if (abs(curX - pastX) == 0 && abs(curY - pastY) <= 1)
-            {
-                pastX = curX;
-                pastY = curY;
-            }
-            else
-            {
-                curX = 0;
-                curY = 0;
-            }
-            // cout << "저장된 좌표: " << pastX << "," << pastY << endl;
-            double markerPosX = curX * markerDistance;
-            double markerPosY = curY * markerDistance;
-            double markerPosZ = 0;
-            Mat absoluteMarkerPos = (Mat_<double>(3, 1) << markerPosX, markerPosY, markerPosZ); // Marker's absolute position
-            Mat R_m = Mat::eye(3, 3, CV_64F);                                                   // Marker's rotation matrix (identity because it's flat)
-
-            // Compute the absolute position and orientation of the camera
-            Mat C = R_m * T_btoc + absoluteMarkerPos; // Camera's absolute position
-            Mat R_c = R_m * R_btoc;                   // Camera's rotation matrix
-
-            camPos.push_back({C.at<double>(0, 0), C.at<double>(0, 1), C.at<double>(0, 2)});
-            camRot.push_back(R_c);
-
-            tf::Matrix3x3 rotation_matrix(R_c.at<double>(0, 0), R_c.at<double>(0, 1), R_c.at<double>(0, 2),
-                                          R_c.at<double>(1, 0), R_c.at<double>(1, 1), R_c.at<double>(1, 2),
-                                          R_c.at<double>(2, 0), R_c.at<double>(2, 1), R_c.at<double>(2, 2));
-
-            double yaw_x, yaw_y, pitch, roll;
-            rotation_matrix.getEulerYPR(yaw_y, pitch, roll);
-            yaw_x = yaw_y + M_PI / 2;
-            yaw_x = fmod(yaw_x + M_PI, 2 * M_PI) - M_PI;
-
-            camYaw = yaw_x;
-
+            pastX = curX;
+            pastY = curY;
         }
+        else if (abs(curX - pastX) <= 1 && abs(curY - pastY) == 0)
+        {
+            pastX = curX;
+            pastY = curY;
+        }
+        else if (abs(curX - pastX) == 0 && abs(curY - pastY) <= 1)
+        {
+            pastX = curX;
+            pastY = curY;
+        }
+        else
+        {
+            curX = 0;
+            curY = 0;
+        }
+        // cout << "저장된 좌표: " << pastX << "," << pastY << endl;
+        // cout << "저장된 좌표: " << curX << "," << curY << endl;
+        double markerPosX = curX * markerDistance;
+        double markerPosY = curY * markerDistance;
+        double markerPosZ = 0;
+
+        Mat absoluteMarkerPos = (Mat_<double>(3, 1) << markerPosX, markerPosY, markerPosZ); // Marker's absolute position
+        Mat R_m = Mat::eye(3, 3, CV_64F);                                                   // Marker's rotation matrix (identity because it's flat)
+
+        // Compute the absolute position and orientation of the camera
+        Mat C = R_m * T_btoc + absoluteMarkerPos; // Camera's absolute position
+        Mat R_c = R_m * R_btoc;                   // Camera's rotation matrix
+
+        camPos.push_back({C.at<double>(0, 0), C.at<double>(0, 1), C.at<double>(0, 2)});
+        camRot.push_back(R_c);
+
+        tf::Matrix3x3 rotation_matrix(R_c.at<double>(0, 0), R_c.at<double>(0, 1), R_c.at<double>(0, 2),
+                                      R_c.at<double>(1, 0), R_c.at<double>(1, 1), R_c.at<double>(1, 2),
+                                      R_c.at<double>(2, 0), R_c.at<double>(2, 1), R_c.at<double>(2, 2));
+
+        double yaw_x, yaw_y, pitch, roll;
+        rotation_matrix.getEulerYPR(yaw_y, pitch, roll);
+        yaw_x = yaw_y + M_PI / 2;
+        yaw_x = fmod(yaw_x + M_PI, 2 * M_PI) - M_PI;
+
+        camYaw = yaw_x;
+        // cout << "카메라의 yaw: " << camYaw << endl;
     }
 
-
-    void drawResults(Mat &image, Mat &imageCopy, vector<Vec3d> &rvecs, vector<Vec3d> &tvecs, vector<int> &markerIds, vector<vector<Point2f>> &markerCorners, vector<vector<Point2f>> &rejectedMarkers, vector<Vec4i> &diamondIds, vector<vector<Point2f>> &diamondCorners)
+    void drawResults(Mat &image, Mat &imageCopy, Vec3d &rvec, Vec3d &tvec, vector<int> &markerIds, vector<vector<Point2f>> &markerCorners, vector<vector<Point2f>> &rejectedMarkers, vector<Vec4i> &diamondIds, vector<vector<Point2f>> &diamondCorners)
     {
         image.copyTo(imageCopy);
         if (markerIds.size() > 0)
@@ -238,7 +237,7 @@ public:
             if (isStringNonEmpty(estimatePose))
             {
                 for (unsigned int i = 0; i < diamondIds.size(); i++)
-                    cv::drawFrameAxes(imageCopy, camMatrix, distCoeffs, rvecs[i], tvecs[i],
+                    cv::drawFrameAxes(imageCopy, camMatrix, distCoeffs, rvec, tvec,
                                       squareLength * 1.1f);
             }
         }

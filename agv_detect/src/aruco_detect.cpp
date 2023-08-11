@@ -17,7 +17,6 @@ private:
   ros::Publisher camera_pose_pub_;
   ros::Publisher marker_pos_pub_;
   ros::Subscriber camera_pos_sub_;
-  tf::TransformListener listener;
 
   float squareLength_;
   float markerLength_;
@@ -116,7 +115,7 @@ public:
     }
 
     // 받아온 이미지를 통해서 pose를 계산하는 코드
-    vector<Vec3d> rvecs_, tvecs_;
+    Vec3d rvec_, tvec_;
     vector<int> markerIds_;
     vector<Vec4i> diamondIds_;
     vector<vector<Point2f>> markerCorners_, rejectedMarkers_, diamondCorners_;
@@ -130,8 +129,8 @@ public:
     {
       aruco_detector_->setMarkerCornersAndIds(cv_ptr->image, markerCorners_, markerIds_);
       aruco_detector_->detectDiamond(cv_ptr->image, markerIds_, markerCorners_, diamondCorners_, diamondIds_);
-      aruco_detector_->estimateDiamondPose(rvecs_, tvecs_, diamondCorners_, diamondIds_);
-      aruco_detector_->calculateCameraPose(rvecs_, tvecs_, diamondIds_, camPos_, camRot_, camYaw_);
+      aruco_detector_->estimateDiamondPose(rvec_, tvec_, diamondCorners_, diamondIds_);
+      aruco_detector_->calculateCameraPose(rvec_, tvec_, diamondIds_, camPos_, camRot_, camYaw_);
 
       if(!camPos_.empty()){
         camera_pose_.x = camPos_.at(0)[0];
@@ -152,12 +151,12 @@ public:
 
     // image를 publish하는 코드 생략 가능
     Mat imageCopy;
-    aruco_detector_->drawResults(cv_ptr->image, imageCopy, rvecs_, tvecs_, markerIds_, markerCorners_, rejectedMarkers_, diamondIds_, diamondCorners_);
+    aruco_detector_->drawResults(cv_ptr->image, imageCopy, rvec_, tvec_, markerIds_, markerCorners_, rejectedMarkers_, diamondIds_, diamondCorners_);
     image_pub_.publish(cv_bridge::CvImage(std_msgs::Header(), "bgr8", imageCopy).toImageMsg());
     camera_pose_pub_.publish(camera_pose_);
 
     geometry_msgs::Pose2D marker_pose_;
-    if (camera_pose_.x == 0 && camera_pose_.y == 0 && camera_pose_.theta == 0)
+    if (camera_pose_.x == 0 && camera_pose_.y == 0)
     {
       marker_pose_.x = 0;
       marker_pose_.y = 0;

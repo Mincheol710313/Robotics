@@ -6,9 +6,9 @@
         <param name="estimatePose" type="string" value="/home/godssi/catkin_ws/src/agv_detect/include/calibration_540.yml"/>
         <param name="autoScale" type="string" value=""/>
         <param name="markerDistance" type="double" value="1.8"/>
-        <param name="multipleMarkers" type="bool" value="true"/>
+        <param name="multipleMarkers" type="bool" value="false"/>
         <param name="detectorParams" type="string" value=""/>
-        <param name="refine" type="int" value="2"/>
+        <param name="refine" type="int" value="3"/>
         <param name="camId" type="int" value="4"/>
         <param name="video" type="string" value=""/>
         <param name="dictionary" type="int" value="3"/>
