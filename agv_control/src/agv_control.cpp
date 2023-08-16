@@ -88,8 +88,7 @@ public:
         geometry_msgs::Twist msg;
         msg.linear.x = 0;
         msg.angular.z = 0;
-        velocity_command_publisher_.publish(msg); 
-        ros::shutdown();
+        velocity_command_publisher_.publish(msg);
     }
 };
 
