@@ -81,6 +81,16 @@ public:
         msg.angular.z = command.at<float>(1);
         velocity_command_publisher_.publish(msg); 
     }
+
+    void stop()
+    {
+        std::cout << "-----------stop-----------" << std::endl;
+        geometry_msgs::Twist msg;
+        msg.linear.x = 0;
+        msg.angular.z = 0;
+        velocity_command_publisher_.publish(msg); 
+        ros::shutdown();
+    }
 };
 
 int main(int argc, char **argv)
@@ -93,6 +103,8 @@ int main(int argc, char **argv)
 
     ControlROSWrapper controlWrapper(&nh);
     ROS_INFO("controller is now started");
-    
+
     ros::waitForShutdown();
+    controlWrapper.stop();
+    
 }
