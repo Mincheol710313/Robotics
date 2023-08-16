@@ -64,6 +64,9 @@ public:
         // DetectorParms initialize
         detectorParams = aruco::DetectorParameters::create();
         setDetectParams(detectorParams, refine);
+        detectorParams->markerBorderBits = 2;
+        detectorParams->minOtsuStdDev = 3.0;
+        detectorParams->errorCorrectionRate = 0.2;
 
         // Camera initialize
         camId = ci;

@@ -40,9 +40,9 @@ public:
 
         control.reset(new CONTROL(gainLinear_, gainAngular_, toleranceLinear_, toleranceAngular_, linearMax_, AngularMax_, acc_linear_, acc_angluar_, publish_velocity_command_frequency_));
 
-        estimated_position_subscriber_ = nh->subscribe("estimated_pos", 10, &ControlROSWrapper::callbackEstimatedPosition, this);
-        velocity_command_publisher_ = nh->advertise<geometry_msgs::Twist>("cmd_vel", 10);
-        current_velocity_subscriber_= nh->subscribe("cur_vel", 10, &ControlROSWrapper::callbackCurVelocity, this);
+        estimated_position_subscriber_ = nh->subscribe("estimated_pos", 1, &ControlROSWrapper::callbackEstimatedPosition, this);
+        velocity_command_publisher_ = nh->advertise<geometry_msgs::Twist>("cmd_vel", 1);
+        current_velocity_subscriber_= nh->subscribe("cur_vel", 1, &ControlROSWrapper::callbackCurVelocity, this);
         velocity_command_timer_ = nh->createTimer(ros::Duration(1.0 / publish_velocity_command_frequency_),&ControlROSWrapper::publishVelocityCommand, this);
         target_position_server_ = nh->advertiseService("target_pos", &ControlROSWrapper::callbackTargetPosition, this);
         // target_position_subscriber_ = nh->subscribe("target_pos", 10, &ControlROSWrapper::callbackTargetPosition, this);
@@ -81,7 +81,6 @@ public:
         msg.angular.z = command.at<float>(1);
         velocity_command_publisher_.publish(msg); 
     }
-
 };
 
 int main(int argc, char **argv)
@@ -96,5 +95,4 @@ int main(int argc, char **argv)
     ROS_INFO("controller is now started");
 
     ros::waitForShutdown();
-    
 }

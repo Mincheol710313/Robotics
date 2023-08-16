@@ -25,10 +25,10 @@ public:
 
         estimator.reset(new ESTIMATOR(stateSize_, contrSize_, 1.0 / publish_estimated_position_frequency_));
 
-        detected_position_subscriber_ = nh->subscribe("marker_pos", 10, &EstimatorROSWrapper::callbackPosition, this);
-        detected_velocity_subscriber_ = nh->subscribe("cur_vel", 10, &EstimatorROSWrapper::callbackVelocity, this);
-        velocity_command_subscriber_ = nh->subscribe("cmd_vel", 10, &EstimatorROSWrapper::callbackCommand, this);
-        estimated_position_publisher_ = nh->advertise<geometry_msgs::Pose2D>("estimated_pos", 10);
+        detected_position_subscriber_ = nh->subscribe("marker_pos", 1, &EstimatorROSWrapper::callbackPosition, this);
+        detected_velocity_subscriber_ = nh->subscribe("cur_vel", 1, &EstimatorROSWrapper::callbackVelocity, this);
+        velocity_command_subscriber_ = nh->subscribe("cmd_vel", 1, &EstimatorROSWrapper::callbackCommand, this);
+        estimated_position_publisher_ = nh->advertise<geometry_msgs::Pose2D>("estimated_pos", 1);
         estimated_position_timer_ = nh->createTimer(ros::Duration(1.0 / publish_estimated_position_frequency_),&EstimatorROSWrapper::publishEstimatedPosition, this);
     }
     
