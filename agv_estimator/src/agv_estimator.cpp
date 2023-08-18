@@ -16,6 +16,8 @@ private:
     int stateSize_;
     int contrSize_;
     float publish_estimated_position_frequency_;
+    float estimated_position_x;
+    float estimated_position_y;
 
 public:
     EstimatorROSWrapper(ros::NodeHandle *nh) {
@@ -33,8 +35,20 @@ public:
     }
     
     void callbackPosition(const geometry_msgs::Pose2D::ConstPtr& msg) {
-        if(msg->x ==0 && msg->y ==0) estimator->setReceived(false);
-        else {
+        if  (msg->x == 0 && msg->y == 0) estimator->setReceived(false); // 마커를 안 보고 있을 때
+        else if (estimated_position_x !=  0.0f && estimated_position_y != 0.0f) // estimated position에 값이 있을 때
+        {
+            if ((abs(msg->x - estimated_position_x) > 0.2) || (abs(msg->y - estimated_position_y) > 0.2)){
+                estimator->setReceived(false);
+                std::cout << "마커가 튐" << std::endl;
+            }
+            else {
+                estimator->setReceived(true);
+                cv::Mat data = (cv::Mat_<float>(3, 1) << msg->x, msg->y, msg->theta);
+                estimator->setPosData(data);
+            }
+        }
+        else{ // 처음에 estimated_position에 값이 할당 안되어 있고 마커를 보고 있을 때
             estimator->setReceived(true);
             cv::Mat data = (cv::Mat_<float>(3, 1) << msg->x, msg->y, msg->theta);
             estimator->setPosData(data);
@@ -58,8 +72,10 @@ public:
         geometry_msgs::Pose2D msg;
         msg.x = corrected.at<float>(0);
         msg.y = corrected.at<float>(1);
+        estimated_position_x = msg.x;
+        estimated_position_y = msg.y;
         float theta = corrected.at<float>(2);
-        theta = theta - 2*M_PI*floor((theta+M_PI)/(2*M_PI));
+        theta = theta - 2 * M_PI * floor((theta + M_PI) / (2 * M_PI));
         msg.theta = theta;
         estimated_position_publisher_.publish(msg);
         estimator->setReceived(false);
