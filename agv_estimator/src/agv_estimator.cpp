@@ -16,6 +16,8 @@ private:
     int stateSize_;
     int contrSize_;
     float publish_estimated_position_frequency_;
+    float estimated_position_x = 0.0;
+    float estimated_position_y = 0.0;
 
 public:
     EstimatorROSWrapper(ros::NodeHandle *nh) {
@@ -33,8 +35,10 @@ public:
     }
     
     void callbackPosition(const geometry_msgs::Pose2D::ConstPtr& msg) {
-        if(msg->x ==0 && msg->y ==0) estimator->setReceived(false);
-        else {
+        if  (msg->x == 0 && msg->y == 0){
+            estimator->setReceived(false);
+        }
+        else{
             estimator->setReceived(true);
             cv::Mat data = (cv::Mat_<float>(3, 1) << msg->x, msg->y, msg->theta);
             estimator->setPosData(data);
@@ -59,9 +63,24 @@ public:
         msg.x = corrected.at<float>(0);
         msg.y = corrected.at<float>(1);
         float theta = corrected.at<float>(2);
-        theta = theta - 2*M_PI*floor((theta+M_PI)/(2*M_PI));
+        theta = theta - 2 * M_PI * floor((theta + M_PI) / (2 * M_PI));
         msg.theta = theta;
-        estimated_position_publisher_.publish(msg);
+        std::cout << "estimated_pos 값: " << "(" << msg.x << ", " << msg.y << ")" << std::endl;
+
+        if (estimated_position_x == 0.0 && estimated_position_y == 0.0){
+            estimated_position_x = msg.x;
+            estimated_position_y = msg.y;
+        }
+        else if ((abs(msg.x - estimated_position_x) < 0.012) && (abs(msg.y - estimated_position_y) < 0.012)){
+            // 이 값은 [(최대 속도) x (publish_estimated_position_frequency_)] 의 5배 정도로 설정해야함
+            estimated_position_publisher_.publish(msg);
+            estimated_position_x = msg.x;
+            estimated_position_y = msg.y;
+        }
+        else{
+            std::cout << "* estimated_pos 값이 튐 *" << std::endl;
+        }
+        std::cout << "-----------------------" << std::endl;
         estimator->setReceived(false);
     }
 };
