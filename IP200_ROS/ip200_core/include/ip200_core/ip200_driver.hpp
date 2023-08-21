@@ -74,14 +74,14 @@ namespace aidl
 			if (!ros::param::get("~publish_current_odometry_frequency", publish_current_odometry_frequency_))
 				publish_current_odometry_frequency_ = PUBLISH_CURRENT_ODOMETRY_FREQUENCY;
 
-			odometry_publisher_ = nh_private_->advertise<nav_msgs::Odometry>("odom", 50);
-			cmd_rpm_publisher_ = nh_private_->advertise<ip200_msgs::RobotMotor>("cmd_rpm", 50);
-			cur_vel_publisher_ = nh_private_->advertise<geometry_msgs::Twist>("cur_vel", 50);  //메시지 타입 수정
+			odometry_publisher_ = nh_private_->advertise<nav_msgs::Odometry>("odom", 1);
+			cmd_rpm_publisher_ = nh_private_->advertise<ip200_msgs::RobotMotor>("cmd_rpm", 1);
+			cur_vel_publisher_ = nh_private_->advertise<geometry_msgs::Twist>("cur_vel", 1);  //메시지 타입 수정
 
 			cmd_velocity_Subscriber_ = nh_private_->subscribe(
-				"cmd_vel", 50, &ip200BodyNode::cmd_vel_callback, this);
+				"cmd_vel", 1, &ip200BodyNode::cmd_vel_callback, this);
 			cur_rpm_Subscriber_ = nh_private_->subscribe(
-				"cur_rpm", 50, &ip200BodyNode::rpm_vel_callback, this);
+				"cur_rpm", 1, &ip200BodyNode::rpm_vel_callback, this);
 
 			reset_odometry_service_ = nh_private_->advertiseService(
 				"reset_odometry", &ip200BodyNode::reset_odometry_callback, this);

@@ -3,12 +3,12 @@
         <param name="squareLength" type="double" value="0.062"/>
         <param name="markerLength" type="double" value="0.0496"/>
         <param name="showRejected" type="string" value=""/>
-        <param name="estimatePose" type="string" value="/home/godssi/catkin_ws/src/agv_detect/include/calibration_540.yml"/>
+        <param name="estimatePose" type="string" value="/home/godssi/catkin_ws/src/agv_detect/include/calibration_custom.yml"/>
         <param name="autoScale" type="string" value=""/>
         <param name="markerDistance" type="double" value="1.8"/>
         <param name="multipleMarkers" type="bool" value="false"/>
         <param name="detectorParams" type="string" value=""/>
-        <param name="refine" type="int" value="3"/>
+        <param name="refine" type="int" value="1"/>
         <param name="camId" type="int" value="4"/>
         <param name="video" type="string" value=""/>
         <param name="dictionary" type="int" value="3"/>

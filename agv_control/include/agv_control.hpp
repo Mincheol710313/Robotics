@@ -73,7 +73,7 @@ public:
             else {
                 command.at<float>(1) = 0;               
                 command.at<float>(0) 
-                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainLinear * abs(dX(targetX)));
+                = std::min(std::min(cur_vel.at<float>(0) + 0.03f +  acc_linear / velocity_command_frequency, linearMax), gainLinear * abs(dX(targetX)));
                 }
             }
         
@@ -83,7 +83,7 @@ public:
             else {
                 command.at<float>(1) = 0;
                 command.at<float>(0) 
-                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainLinear * abs(dX(targetX)));
+                = std::min(std::min(cur_vel.at<float>(0) + 0.03f + acc_linear / velocity_command_frequency, linearMax), gainLinear * abs(dX(targetX)));
             }
         }
     }
@@ -94,7 +94,7 @@ public:
             else {
                 command.at<float>(1) = 0;
                 command.at<float>(0) 
-                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainLinear * abs(dY(targetY)));
+                = std::min(std::min(cur_vel.at<float>(0) + 0.03f + acc_linear / velocity_command_frequency, linearMax), gainLinear * abs(dY(targetY)));
             }
         }
         else {
@@ -103,7 +103,7 @@ public:
             else {
                 command.at<float>(1) = 0;
                 command.at<float>(0) 
-                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency, linearMax), gainLinear * abs(dY(targetY)));
+                = std::min(std::min(cur_vel.at<float>(0) + 0.03f + acc_linear / velocity_command_frequency, linearMax), gainLinear * abs(dY(targetY)));
             }
         }
     }
@@ -111,11 +111,11 @@ public:
         if (dTheta(targetTheta) >= 0) {
             // abs를 붙인 이유 : 현재 각속도가 음수일 때 절대값을 취하면서 양수로 바뀌면서 목표 각속도보다 커지는 경우가 생김
             command.at<float>(1) 
-            = std::min(std::min(abs(cur_vel.at<float>(1)) + acc_angular / velocity_command_frequency, AngularMax), gainAngular * abs(dTheta(targetTheta)));
+            = std::min(std::min(abs(cur_vel.at<float>(1)) + 0.043f +acc_angular / velocity_command_frequency, AngularMax), gainAngular * abs(dTheta(targetTheta)));
         }
         else {
             command.at<float>(1) 
-            = -std::min(std::min(abs(cur_vel.at<float>(1)) + acc_angular / velocity_command_frequency, AngularMax), gainAngular * abs(dTheta(targetTheta)));
+            = -std::min(std::min(abs(cur_vel.at<float>(1)) + 0.043f + acc_angular / velocity_command_frequency, AngularMax), gainAngular * abs(dTheta(targetTheta)));
         }
     }
 

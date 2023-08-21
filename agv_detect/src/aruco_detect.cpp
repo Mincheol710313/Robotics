@@ -2,7 +2,6 @@
 #include "aruco_detect.hpp"
 #include <image_transport/image_transport.h> // image를 subscribe 혹은 publish 할 때 사용
 #include <sensor_msgs/image_encodings.h>
-#include <cv_bridge/cv_bridge.h> // sensor_image로 들어오는 것을 OpenCV로 처리할 수 있게 image 파일을 바꾸는 용도로 사용
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
 #include <geometry_msgs/Pose2D.h>
@@ -103,16 +102,14 @@ public:
 
   void callbakPosition(const sensor_msgs::ImageConstPtr &msg)
   {
-    cv_bridge::CvImagePtr cv_ptr;
-    try
-    {
-      cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
-    }
-    catch (cv_bridge::Exception &e)
-    {
-      ROS_ERROR("cv_bridge exception: %s", e.what());
-      return;
-    }
+    const uint8_t *image_data = msg->data.data();
+
+    // 이미지의 높이와 너비 추출
+    int image_height = msg->height;
+    int image_width = msg->width;
+
+    // 이미지 데이터를 OpenCV의 Mat 형식으로 변환
+    Mat image(image_height, image_width, CV_8UC3, const_cast<uint8_t *>(image_data));
 
     // 받아온 이미지를 통해서 pose를 계산하는 코드
     Vec3d rvec_, tvec_;
@@ -127,8 +124,8 @@ public:
 
     try
     {
-      aruco_detector_->setMarkerCornersAndIds(cv_ptr->image, markerCorners_, markerIds_);
-      aruco_detector_->detectDiamond(cv_ptr->image, markerIds_, markerCorners_, diamondCorners_, diamondIds_);
+      aruco_detector_->setMarkerCornersAndIds(image, markerCorners_, markerIds_);
+      aruco_detector_->detectDiamond(image, markerIds_, markerCorners_, diamondCorners_, diamondIds_);
       aruco_detector_->estimateDiamondPose(rvec_, tvec_, diamondCorners_, diamondIds_);
       aruco_detector_->calculateCameraPose(rvec_, tvec_, diamondIds_, camPos_, camRot_, camYaw_);
 
@@ -151,7 +148,7 @@ public:
 
     // image를 publish하는 코드 생략 가능
     Mat imageCopy;
-    aruco_detector_->drawResults(cv_ptr->image, imageCopy, rvec_, tvec_, markerIds_, markerCorners_, rejectedMarkers_, diamondIds_, diamondCorners_);
+    aruco_detector_->drawResults(image, imageCopy, rvec_, tvec_, markerIds_, markerCorners_, rejectedMarkers_, diamondIds_, diamondCorners_);
     image_pub_.publish(cv_bridge::CvImage(std_msgs::Header(), "bgr8", imageCopy).toImageMsg());
     camera_pose_pub_.publish(camera_pose_);
 
@@ -225,7 +222,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "aruco_detect");
   ros::NodeHandle nh;
 
-  ros::AsyncSpinner spinner(4);
+  ros::AsyncSpinner spinner(0);
   spinner.start();
 
   ArucoDetectorROSWrapper arucoDetectorWrapper(&nh);

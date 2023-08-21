@@ -64,9 +64,9 @@ public:
         // DetectorParms initialize
         detectorParams = aruco::DetectorParameters::create();
         setDetectParams(detectorParams, refine);
-        detectorParams->markerBorderBits = 2;
-        detectorParams->minOtsuStdDev = 3.0;
-        detectorParams->errorCorrectionRate = 0.2;
+        // detectorParams->markerBorderBits = 2;
+        // detectorParams->minOtsuStdDev = 2.0;
+        // detectorParams->errorCorrectionRate = 0.2;
 
         // Camera initialize
         camId = ci;
@@ -156,6 +156,9 @@ public:
                 tvec = currentTvec[0];
             }
         }
+
+        // cout << "rvec: " << rvec << endl;
+        // cout << "tvec: " << tvec << endl;
     }
 
     void calculateCameraPose(Vec3d &rvec, Vec3d &tvec, vector<Vec4i> &diamondIds, vector<Vec3d> &camPos, Mat &camRot, double &camYaw)
@@ -166,13 +169,18 @@ public:
         }
 
         Mat R_ctob;
-        Rodrigues(rvec, R_ctob); // Camera-to-marker rotation matrix
+        Rodrigues(rvec, R_ctob); // Camera-to-marker rotation matrix : 카메라에서 마커까지의 rotation matrix
+        // cout << "R_ctob: " << R_ctob << endl;
 
-        Mat T_ctob = Mat(tvec); // Camera-to-marker translation vector
+        Mat T_ctob = Mat(tvec); // Camera-to-marker translation vector : 카메라에서 마커까지의 translation matrix
+        // cout << "T_ctob: " << T_ctob << endl;
 
         // Invert transformations
         Mat R_btoc = R_ctob.t();       // Marker-to-camera rotation matrix
         Mat T_btoc = -R_btoc * T_ctob; // Marker-to-camera translation vector
+
+        // cout << "R_btoc: " << R_btoc << endl;
+        // cout << "T_btoc: " << T_btoc << endl;
 
         // Assume marker's absolute position is known and stored in absoluteMarkerPos
         curX = static_cast<double>(diamondIds[0].val[0] * 32 + diamondIds[0].val[1]);
@@ -198,6 +206,7 @@ public:
             curX = 0;
             curY = 0;
         }
+
         // cout << "저장된 좌표: " << pastX << "," << pastY << endl;
         // cout << "저장된 좌표: " << curX << "," << curY << endl;
         double markerPosX = curX * markerDistance;
@@ -211,19 +220,30 @@ public:
         Mat C = R_m * T_btoc + absoluteMarkerPos; // Camera's absolute position
         Mat R_c = R_m * R_btoc;                   // Camera's rotation matrix
 
-        camPos.push_back({C.at<double>(0, 0), C.at<double>(0, 1), C.at<double>(0, 2)});
-        camRot.push_back(R_c);
+        // z축이 뒤집힌 경우 카메라 포즈를 0으로 초기화
+        if (C.at<double>(0, 2) < 0)
+        {
+            camPos.push_back({0, 0, 0});
+            camYaw = 0;
+        }
+        else
+        {
+            camPos.push_back({C.at<double>(0, 0), C.at<double>(0, 1), C.at<double>(0, 2)});
 
-        tf::Matrix3x3 rotation_matrix(R_c.at<double>(0, 0), R_c.at<double>(0, 1), R_c.at<double>(0, 2),
-                                      R_c.at<double>(1, 0), R_c.at<double>(1, 1), R_c.at<double>(1, 2),
-                                      R_c.at<double>(2, 0), R_c.at<double>(2, 1), R_c.at<double>(2, 2));
+            camRot.push_back(R_c);
 
-        double yaw_x, yaw_y, pitch, roll;
-        rotation_matrix.getEulerYPR(yaw_y, pitch, roll);
-        yaw_x = yaw_y + M_PI / 2;
-        yaw_x = fmod(yaw_x + M_PI, 2 * M_PI) - M_PI;
+            tf::Matrix3x3 rotation_matrix(R_c.at<double>(0, 0), R_c.at<double>(0, 1), R_c.at<double>(0, 2),
+                                          R_c.at<double>(1, 0), R_c.at<double>(1, 1), R_c.at<double>(1, 2),
+                                          R_c.at<double>(2, 0), R_c.at<double>(2, 1), R_c.at<double>(2, 2));
 
-        camYaw = yaw_x;
+            double yaw_x, yaw_y, pitch, roll;
+            rotation_matrix.getEulerYPR(yaw_y, pitch, roll);
+            yaw_x = yaw_y + M_PI / 2;
+            yaw_x = fmod(yaw_x + M_PI, 2 * M_PI) - M_PI;
+
+            camYaw = yaw_x;
+        }
+        // printf("camPos: %f, %f, %f\n", camPos[0][0], camPos[0][1], camPos[0][2]);
         // cout << "카메라의 yaw: " << camYaw << endl;
     }
 
@@ -241,7 +261,7 @@ public:
             {
                 for (unsigned int i = 0; i < diamondIds.size(); i++)
                     cv::drawFrameAxes(imageCopy, camMatrix, distCoeffs, rvec, tvec,
-                                      squareLength * 1.1f);
+                                      squareLength * 0.5f);
             }
         }
     }
