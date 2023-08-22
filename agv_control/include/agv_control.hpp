@@ -34,7 +34,7 @@ public:
     CONTROL(float gainLinear_=0.5, float gainAngular_ = 0.3, float toleranceLinear_ = 0.01, float toleranceAngular_ = 0.005, float lin=0.45, float ang=1, float acc_lin=0.7, float acc_ang=2.5, float frequency=50.0) {
         gainLinear = gainLinear_;
         gainAngular = gainAngular_;
-        P_Gain = 0.05; // 나중에 파라미터로 설정
+        P_Gain = 50000; // 나중에 파라미터로 설정
         toleranceLinear = toleranceLinear_;
         toleranceAngular = toleranceAngular_;
         received = false;
@@ -107,20 +107,22 @@ public:
         float curY = cur.at<float>(1);
         std::cout << "x1: " << x1 << " y1: " << y1 << " x2: " << x2 << " y2: " << y2 << std::endl;
         std::cout << "curX: " << curX << " curY: " << curY << std::endl;
+        // ***************************************************** a, b, c 수정 필요
         float a = (y2 - y1);
-        float b = (x2 - x1);
-        float c = (-a * x1 + y1) * (x2 - x1);
+        float b = - (x2 - x1);
+        float c = - (y2 - y1) * x1 + y1 * (x2 - x1);
         std::cout << "a: " << a << " b: " << b << " c: " << c << std::endl;
 
         cv::Mat vector1 = (cv::Mat_<float>(3, 1) << curX, curY, 0.0);
         cv::Mat vector2 = (cv::Mat_<float>(3, 1) << x2 - x1, y2 - y1, 0.0);
 
         cv::Mat result = vector1.cross(vector2);
-        std::cout << "error: " << abs(a * curX + b * curY + c) / sqrt(pow(a, 2) + pow(b, 2)) << std::endl;
         if ( result.at<float>(2) >= 0 ) {
+            std::cout << "error: " << abs(a * curX + b * curY + c) / sqrt(pow(a, 2) + pow(b, 2)) << std::endl;
             return abs(a * curX + b * curY + c) / sqrt(pow(a, 2) + pow(b, 2));
         }
         else {
+            std::cout << "error: " << - abs(a * curX + b * curY + c) / sqrt(pow(a, 2) + pow(b, 2)) << std::endl;
             return -abs(a * curX + b * curY + c) / sqrt(pow(a, 2) + pow(b, 2));
         }
     }
