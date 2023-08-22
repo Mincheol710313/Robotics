@@ -40,7 +40,7 @@ public:
 
         control.reset(new CONTROL(gainLinear_, gainAngular_, toleranceLinear_, toleranceAngular_, linearMax_, AngularMax_, acc_linear_, acc_angluar_, publish_velocity_command_frequency_));
 
-        estimated_position_subscriber_ = nh->subscribe("estimated_pos", 1, &ControlROSWrapper::callbackEstimatedPosition, this);
+        estimated_position_subscriber_ = nh->subscribe("pose", 1, &ControlROSWrapper::callbackEstimatedPosition, this);
         velocity_command_publisher_ = nh->advertise<geometry_msgs::Twist>("cmd_vel", 1);
         current_velocity_subscriber_= nh->subscribe("cur_vel", 1, &ControlROSWrapper::callbackCurVelocity, this);
         velocity_command_timer_ = nh->createTimer(ros::Duration(1.0 / publish_velocity_command_frequency_),&ControlROSWrapper::publishVelocityCommand, this);
@@ -56,7 +56,7 @@ public:
 
         res.success = true;
         res.message = "Received target position.";
-
+        
         return true;
     }
     void callbackEstimatedPosition(const geometry_msgs::Pose2D::ConstPtr& msg) {
@@ -69,9 +69,9 @@ public:
     }
 
     void publishVelocityCommand(const ros::TimerEvent &event) {
-        // cv::Mat_<float> target = control->getTar();
-        // std::cout << target.at<float>(0) << std::endl;
-        // control->moveX(target.at<float>(0));
+        // waypoint를 설정하고 이를 이용하여 target position으로 이동.
+        // control->setWaypoint();
+
         control->moveToTarget();
 
         geometry_msgs::Twist msg;

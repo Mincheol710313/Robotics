@@ -1,6 +1,9 @@
 #ifndef AGV_CONTROLLER_HPP
 #define AGV_CONTROLLER_HPP
 #include <opencv2/opencv.hpp>
+#include <iostream>
+
+using namespace std;
 
 class CONTROL {
     
@@ -23,6 +26,7 @@ private:
     cv::Mat_<float> cur;
     cv::Mat_<float> cur_vel;
     cv::Mat_<float> command;
+    cv::Mat_<float> waypoint;
     
 public:
     CONTROL(float gainLinear_=0.5, float gainAngular_ = 1, float toleranceLinear_ = 0.01, float toleranceAngular_ = 0.05, float lin=0.45, float ang=1, float acc_lin=0.7, float acc_ang=2.5, float frequency=50.0) {
@@ -43,6 +47,7 @@ public:
         cur = cv::Mat_<float>(3, 1);
         cur_vel = cv::Mat_<float>(2, 1);
         command = cv::Mat_<float>(2, 1);
+        waypoint = cv::Mat_<float>(2, 3);
         tar = 0.0;
         cur = 0.0; // set to last position, default position, etc.
         command = 0.0;
@@ -64,6 +69,27 @@ public:
             return (target - cur.at<float>(2)) + 2 * pi;
         }
         else { return target - cur.at<float>(2); }
+    }
+    void setWaypoint() { 
+        // y = 0인 waypoint 설정
+        cv::Mat_<float> waypoint1 = cv::Mat_<float>(2, 1);
+        waypoint1.at<float>(0) = cur.at<float>(0);
+        waypoint1.at<float>(1) = 0;
+
+        // x = target.x 인 waypoint 설정
+        cv::Mat_<float> waypoint2 = cv::Mat_<float>(2, 1);
+        waypoint2.at<float>(0) = tar.at<float>(0);
+        waypoint2.at<float>(1) = 0;
+
+        // target 인 waypoint 설정
+        cv::Mat_<float> waypoint3 = cv::Mat_<float>(2, 1);
+        waypoint3.at<float>(0) = tar.at<float>(0);
+        waypoint3.at<float>(1) = tar.at<float>(1);
+
+        waypoint1.copyTo(waypoint.col(0));
+        waypoint2.copyTo(waypoint.col(1));
+        waypoint3.copyTo(waypoint.col(2));
+        // cout << waypoint << endl;
     }
 
     void moveX(float targetX) {
