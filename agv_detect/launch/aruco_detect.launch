@@ -1,4 +1,13 @@
 <launch>
+  <arg name="enable_color" default="true"/>
+  <arg name="enable_infra1" default="false"/>
+  <arg name="enable_infra2" default="false"/>
+  <arg name="enable_imu" default="false"/>
+  <arg name="enable_fisheye" default="false"/>
+  <arg name="enable_depth" default="false"/>
+  <arg name="color_fps" default="60"/>
+
+  <arg name="enable_pointcloud" default="false"/>
     <node name="aruco_detect" pkg="agv_detect" type="aruco_detect" output="screen">
         <param name="squareLength" type="double" value="0.062"/>
         <param name="markerLength" type="double" value="0.0496"/>
@@ -32,4 +41,14 @@
       <param name="color_format" value="yuv422p" />
       <param name="camera_frame_id" value="usb_cam" />
     </node>
+    <!-- <node name="realsense_node" pkg="realsense2_camera" type="realsense2_camera_node" output="screen">
+        <param name="enable_color" value="$(arg enable_color)"/>
+        <param name="enable_infra1" value="$(arg enable_infra1)"/>
+        <param name="enable_infra2" value="$(arg enable_infra2)"/>
+        <param name="enable_imu" value="$(arg enable_imu)"/>
+        <param name="enable_fisheye" value="$(arg enable_fisheye)"/>
+        <param name="enable_depth" value="$(arg enable_depth)"/>
+        <param name="color_fps" value="$(arg color_fps)"/>
+        <param name="enable_pointcloud" value="$(arg enable_pointcloud)"/>
+      </node> -->
 </launch>

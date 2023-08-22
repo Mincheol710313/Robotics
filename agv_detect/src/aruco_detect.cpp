@@ -147,10 +147,10 @@ public:
     }
 
     // image를 publish하는 코드 생략 가능
-    Mat imageCopy;
-    aruco_detector_->drawResults(image, imageCopy, rvec_, tvec_, markerIds_, markerCorners_, rejectedMarkers_, diamondIds_, diamondCorners_);
-    image_pub_.publish(cv_bridge::CvImage(std_msgs::Header(), "bgr8", imageCopy).toImageMsg());
-    camera_pose_pub_.publish(camera_pose_);
+    // Mat imageCopy;
+    // aruco_detector_->drawResults(image, imageCopy, rvec_, tvec_, markerIds_, markerCorners_, rejectedMarkers_, diamondIds_, diamondCorners_);
+    // image_pub_.publish(imageCopy.toImageMsg());
+    // camera_pose_pub_.publish(camera_pose_);
 
     geometry_msgs::Pose2D marker_pose_;
     if (camera_pose_.x == 0 && camera_pose_.y == 0)
