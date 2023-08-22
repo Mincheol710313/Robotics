@@ -6,6 +6,7 @@
 #include <ros/console.h>
 
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/Pose2D.h>
 #include <nav_msgs/Odometry.h>
 #include <tf/transform_broadcaster.h>
 
@@ -22,10 +23,22 @@ namespace aidl
 	class ip200BodyNode
 	{
 	private:
-		enum {COMPUTE_ODOMETRY_FREQUENCY = 100};
-		enum {PUBLISH_CURRENT_ODOMETRY_FREQUENCY = 100};
-		enum {PUBLISH_CMD_RPM_FREQUENCY = 100};
-		enum {PUBLISH_CUR_VEL_FREQUENCY = 300};
+		enum
+		{
+			COMPUTE_ODOMETRY_FREQUENCY = 100
+		};
+		enum
+		{
+			PUBLISH_CURRENT_ODOMETRY_FREQUENCY = 100
+		};
+		enum
+		{
+			PUBLISH_CMD_RPM_FREQUENCY = 100
+		};
+		enum
+		{
+			PUBLISH_CUR_VEL_FREQUENCY = 300
+		};
 
 		double x_, y_, th_, vx_, vy_, vth_;
 		double cur_x_, cur_y_, cur_th_,
@@ -40,8 +53,10 @@ namespace aidl
 		ros::NodeHandle *nh_private_;
 
 		ros::Publisher odometry_publisher_;
+		ros::Publisher pose_publisher_;
 		ros::Publisher cmd_rpm_publisher_;
 		ros::Publisher cur_vel_publisher_;
+		ros::Subscriber reset_pose_Subscriber_;
 		ros::Subscriber cmd_velocity_Subscriber_;
 		ros::Subscriber cur_rpm_Subscriber_;
 
@@ -54,11 +69,12 @@ namespace aidl
 		tf::TransformBroadcaster odom_broadcaster_;
 		geometry_msgs::TransformStamped odom_trans_;
 		nav_msgs::Odometry odom_;
+		geometry_msgs::Pose2D pose_;
 
 	public:
 		// constructor
 		ip200BodyNode(ros::NodeHandle *nh) : x_(0), y_(0), th_(0), delta_x_(0), delta_y_(0), delta_th_(0), vx_(0), vy_(0), vth_(0),
-											   cur_x_(0), cur_y_(0), cur_th_(0), cur_vx_(0), cur_vy_(0), cur_vth_(0)
+											 cur_x_(0), cur_y_(0), cur_th_(0), cur_vx_(0), cur_vy_(0), cur_vth_(0)
 		{
 			nh_private_ = nh;
 
@@ -75,13 +91,16 @@ namespace aidl
 				publish_current_odometry_frequency_ = PUBLISH_CURRENT_ODOMETRY_FREQUENCY;
 
 			odometry_publisher_ = nh_private_->advertise<nav_msgs::Odometry>("odom", 1);
+			pose_publisher_ = nh_private_->advertise<geometry_msgs::Pose2D>("pose", 1);
 			cmd_rpm_publisher_ = nh_private_->advertise<ip200_msgs::RobotMotor>("cmd_rpm", 1);
-			cur_vel_publisher_ = nh_private_->advertise<geometry_msgs::Twist>("cur_vel", 1);  //메시지 타입 수정
+			cur_vel_publisher_ = nh_private_->advertise<geometry_msgs::Twist>("cur_vel", 1); // 메시지 타입 수정
 
 			cmd_velocity_Subscriber_ = nh_private_->subscribe(
 				"cmd_vel", 1, &ip200BodyNode::cmd_vel_callback, this);
 			cur_rpm_Subscriber_ = nh_private_->subscribe(
 				"cur_rpm", 1, &ip200BodyNode::rpm_vel_callback, this);
+			reset_pose_Subscriber_ = nh_private_->subscribe(
+				"marker_pos", 1, &ip200BodyNode::reset_pose_callback, this);
 
 			reset_odometry_service_ = nh_private_->advertiseService(
 				"reset_odometry", &ip200BodyNode::reset_odometry_callback, this);
@@ -149,8 +168,22 @@ namespace aidl
 			return false;
 		}
 
+		void reset_pose_callback(const geometry_msgs::Pose2D &msg)
+		{
+			if (msg.x != 0 && msg.y != 0 && msg.theta != 0)
+			{
+				if (abs(x_ - msg.x) < 1.0 && abs(y_ - msg.y))
+				{
+					x_ = msg.x;
+					y_ = msg.y;
+					th_ = msg.theta;
+				}
+			}
+		}
+
 		// publish rpm velcity to motor driver node
-		void cmd_rpm_velocity_publish(const ros::TimerEvent &e)
+		void
+		cmd_rpm_velocity_publish(const ros::TimerEvent &e)
 		{
 			// [m/s]
 			ip200_msgs::RobotMotor motor_msg;
@@ -174,11 +207,13 @@ namespace aidl
 			if (broadcast_tf_)
 				odom_broadcaster_.sendTransform(odom_trans_);
 			odometry_publisher_.publish(odom_);
+			pose_publisher_.publish(pose_);
 		}
 
 		void odom_compute(const ros::TimerEvent &e)
 		{
 			nav_msgs::Odometry odom;
+			geometry_msgs::Pose2D pose;
 			geometry_msgs::TransformStamped odom_trans;
 			geometry_msgs::Quaternion odom_quat;
 
@@ -192,6 +227,10 @@ namespace aidl
 			x_ += delta_x_;
 			y_ += delta_y_;
 			th_ += delta_th_;
+
+			pose.x = x_;
+			pose.y = y_;
+			pose.theta = std::atan2(sin(th_), cos(th_));
 
 			odom_quat = tf::createQuaternionMsgFromYaw(th_);
 
@@ -210,29 +249,28 @@ namespace aidl
 			odom.pose.pose.position.y = y_;
 			odom.pose.pose.position.z = 0.0;
 			odom.pose.pose.orientation = odom_quat;
-			odom.pose.covariance = (boost::array<double, 36UL>)
-			{(1e-3), (0), (0), (0), (0), (0), 
-			 (0), (1e-3), (0), (0), (0), (0), 
-			 (0), (0), (1e-3), (0), (0), (0), 
-			 (0), (0), (0), (1e-3), (0), (0), 
-			 (0), (0), (0), (0), (1e-3), (0), 
-			 (0), (0), (0), (0), (0), (3e2)};
+			odom.pose.covariance = (boost::array<double, 36UL>){(1e-3), (0), (0), (0), (0), (0),
+																(0), (1e-3), (0), (0), (0), (0),
+																(0), (0), (1e-3), (0), (0), (0),
+																(0), (0), (0), (1e-3), (0), (0),
+																(0), (0), (0), (0), (1e-3), (0),
+																(0), (0), (0), (0), (0), (3e2)};
 			odom.child_frame_id = "base_footprint";
 			odom.twist.twist.linear.x = cur_vx_;
 			odom.twist.twist.linear.y = cur_vy_;
 			odom.twist.twist.angular.z = cur_vth_;
-			odom.twist.covariance = (boost::array<double, 36UL>)
-			{(1e-3), (0), (0), (0), (0), (0), 
-			(0), (1e-3), (0), (0), (0), (0), 
-			(0), (0), (1e-3), (0), (0), (0), 
-			(0), (0), (0), (1e-3), (0), (0), 
-			(0), (0), (0), (0), (1e-3), (0), 
-			(0), (0), (0), (0), (0), (3e2)};
+			odom.twist.covariance = (boost::array<double, 36UL>){(1e-3), (0), (0), (0), (0), (0),
+																 (0), (1e-3), (0), (0), (0), (0),
+																 (0), (0), (1e-3), (0), (0), (0),
+																 (0), (0), (0), (1e-3), (0), (0),
+																 (0), (0), (0), (0), (1e-3), (0),
+																 (0), (0), (0), (0), (0), (3e2)};
 
 			last_time_ = current_time_;
 
 			odom_ = odom;
 			odom_trans_ = odom_trans;
+			pose_ = pose;
 		}
 
 		void currnet_velocity_publish(const ros::TimerEvent &e)
@@ -242,7 +280,6 @@ namespace aidl
 			msg.angular.z = cur_vth_;
 			cur_vel_publisher_.publish(msg);
 		}
-		
 	};
 
 } // namespace
