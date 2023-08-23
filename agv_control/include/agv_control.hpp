@@ -34,7 +34,7 @@ public:
     CONTROL(float gainLinear_=0.5, float gainAngular_ = 0.3, float toleranceLinear_ = 0.01, float toleranceAngular_ = 0.005, float lin=0.45, float ang=1, float acc_lin=0.7, float acc_ang=2.5, float frequency=50.0) {
         gainLinear = gainLinear_;
         gainAngular = gainAngular_;
-        P_Gain = 50000; // 나중에 파라미터로 설정
+        P_Gain = 1; // 나중에 파라미터로 설정
         toleranceLinear = toleranceLinear_;
         toleranceAngular = toleranceAngular_;
         received = false;
@@ -91,12 +91,15 @@ public:
         }
         else { return target - cur.at<float>(2); }
     }
+
     float distance(){
         float curX = cur.at<float>(0);
         float curY = cur.at<float>(1);
         float targetX = waypoints.at<float>(0, waypoint_num);
         float targetY = waypoints.at<float>(1, waypoint_num);
+        /* std::cout << sqrt(pow(targetX - curX, 2) + pow(targetY - curY, 2)) << std::endl; */
         return sqrt(pow(targetX - curX, 2) + pow(targetY - curY, 2));
+
     }
     float error(){
         float x1 = waypoints.at<float>(0, waypoint_num-1);
@@ -105,39 +108,43 @@ public:
         float y2 = waypoints.at<float>(1, waypoint_num);
         float curX = cur.at<float>(0);
         float curY = cur.at<float>(1);
-        std::cout << "x1: " << x1 << " y1: " << y1 << " x2: " << x2 << " y2: " << y2 << std::endl;
-        std::cout << "curX: " << curX << " curY: " << curY << std::endl;
-        // ***************************************************** a, b, c 수정 필요
+        /* std::cout << "x1: " << x1 << " y1: " << y1 << " x2: " << x2 << " y2: " << y2 << std::endl;
+        std::cout << "curX: " << curX << " curY: " << curY << std::endl; */
+        
         float a = (y2 - y1);
-        float b = - (x2 - x1);
+        float b = - (x1 - x2);
         float c = - (y2 - y1) * x1 + y1 * (x2 - x1);
-        std::cout << "a: " << a << " b: " << b << " c: " << c << std::endl;
+        /* std::cout << "a: " << a << " b: " << b << " c: " << c << std::endl; */
 
-        cv::Mat vector1 = (cv::Mat_<float>(3, 1) << curX, curY, 0.0);
-        cv::Mat vector2 = (cv::Mat_<float>(3, 1) << x2 - x1, y2 - y1, 0.0);
-
-        cv::Mat result = vector1.cross(vector2);
-        if ( result.at<float>(2) >= 0 ) {
+        cv::Mat vector1 = (cv::Mat_<float>(3, 1) << curX - x1, curY - y1, 0.0); // 출발 점 기준으로 현재 위치 벡터
+        /* std::cout << "vector1: " << vector1 << std::endl; */
+        cv::Mat vector2 = (cv::Mat_<float>(3, 1) << x2 - x1, y2 - y1, 0.0); // 출발 점 기준으로 도착 점 벡터
+        /* std::cout << "vector2: " << vector2 << std::endl;
+ */
+        cv::Mat result = vector1.cross(vector2); // 두 벡터를 외적해서 z의 값이 양수인지 음수인지 확인
+        /* std::cout << "result: " << result << std::endl; */
+        if ( result.at<float>(2) >= 0 ) { // 양수이면 오른쪽에 있음
+            /* std::cout << "진행 경로의 오른쪽에 있음"<< std::endl; */
             std::cout << "error: " << abs(a * curX + b * curY + c) / sqrt(pow(a, 2) + pow(b, 2)) << std::endl;
             return abs(a * curX + b * curY + c) / sqrt(pow(a, 2) + pow(b, 2));
         }
-        else {
+        else { // 음수이면 왼쪽에 있음
+            /* std::cout << "진행 경로의 왼쪽에 있음" << std::endl; */
             std::cout << "error: " << - abs(a * curX + b * curY + c) / sqrt(pow(a, 2) + pow(b, 2)) << std::endl;
-            return -abs(a * curX + b * curY + c) / sqrt(pow(a, 2) + pow(b, 2));
+            return - abs(a * curX + b * curY + c) / sqrt(pow(a, 2) + pow(b, 2));
         }
     }
 
     void moveLinear(){
-        
         float targetX = waypoints.at<float>(0, waypoint_num);
         float targetY = waypoints.at<float>(1, waypoint_num);
         command.at<float>(0) = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency + 0.03f, linearMax), gainLinear * distance());
         
         // path에서 많이 벗어날 수록 gainAngular 가 커지도록 설정
         command.at<float>(1) = P_Gain * error();
-        std::cout << "command: " << command << std::endl;
-
-        std::cout << "-------------------------------------" << std::endl;
+        std::cout << "command.z" << command.at<float>(1) << std::endl;
+        /* std::cout << "command: " << command << std::endl; */
+        /* std::cout << "-------------------------------------" << std::endl; */
     }
     /* void moveX(float targetX) {
         if (dX(targetX) >= 0) {
@@ -249,9 +256,10 @@ public:
                     command.at<float>(1) = 0;
                     if ( waypoint_num < waypoints.cols ) {
                         waypoint_num++;
-                        moveCase = 0;
+                        moveCase = 2;
                     }
-                    else {
+                    else { // 최종 목적지 도달
+                        std::cout << "도착하였습니다." << std::endl;
                         moveCase = 0;
                     }
                 } 
