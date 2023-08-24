@@ -11,8 +11,15 @@ private:
     // int --;
     bool received;
     float gainLinear;
-    float gainAngular;
-    float P_Gain;
+    float Kp_Linear;
+    float Ki_Linear;
+    float Kd_Linear;
+    float Kp_Angular;
+    float Ki_Angular;
+    float Kd_Angular;
+    /* float P_Gain;
+    float I_Gain;
+    float D_Gain; */
     float toleranceLinear;
     float toleranceAngular;
     float linearMax;
@@ -23,6 +30,13 @@ private:
     float acc_angular;
     float velocity_command_frequency;
     float waypoint_num; // 몇 번째 waypoint 인지
+    float past_distance; // 이전 거리, D 제어를 하기 위함
+    float sum_distance; // 거리의 합, I 제어를 하기 위함
+    float past_dTheta; // 이전 각도, D 제어를 하기 위함
+    float sum_dTheta; // 각도의 합, I 제어를 하기 위함
+    float past_error; // 이전 에러, D 제어를 하기 위함
+    float sum_error; // 에러의 합, I 제어를 하기 위함
+    float targetTheta;
     
     cv::Mat_<float> tar;
     cv::Mat_<float> cur;
@@ -31,16 +45,22 @@ private:
     cv::Mat_<float> waypoints;
     
 public:
-    CONTROL(float gainLinear_=0.5, float gainAngular_ = 0.3, float toleranceLinear_ = 0.01, float toleranceAngular_ = 0.005, float lin=0.45, float ang=1, float acc_lin=0.7, float acc_ang=2.5, float frequency=50.0) {
-        gainLinear = gainLinear_;
-        gainAngular = gainAngular_;
-        P_Gain = 1; // 나중에 파라미터로 설정
-        toleranceLinear = toleranceLinear_;
-        toleranceAngular = toleranceAngular_;
+    CONTROL(float gainLinear_=0.5, float Kp_Angular_ = 0.3, float toleranceLinear_ = 0.01, float toleranceAngular_ = 0.005, float lin=0.45, float ang=1, float acc_lin=0.7, float acc_ang=2.5, float frequency=50.0) {
+        Kp_Linear = 10;
+        Ki_Linear = 0.0;
+        Kd_Linear = 0.0;
+        Kp_Angular = 10;
+        Ki_Angular = 0.0;
+        Kd_Angular = 0.0;
+        /* P_Gain = 50.0; 
+        I_Gain = 0.0;
+        D_Gain = 1000000.0; // 나중에 파라미터로 설정 */
+        toleranceLinear = 0.001;
+        toleranceAngular = 0.001;
         received = false;
         linearMax = lin;
         AngularMax = ang;
-        pi = M_PI;
+        pi = 3.141592;
         moveCase = 0;
         acc_linear = acc_lin;
         acc_angular = acc_ang;
@@ -51,10 +71,7 @@ public:
         cur = cv::Mat_<float>(3, 1);
         cur_vel = cv::Mat_<float>(2, 1);
         command = cv::Mat_<float>(2, 1);
-        waypoints = cv::Mat_<float>(2, 4);
-        tar = 0.0;
-        cur = 0.0; // set to last position, default position, etc.
-        command = 0.0;
+        waypoints = cv::Mat_<float>(2, 4); // 4는 시작지점을 포함한 웨이포인트 개수
     }
     
     void setCur(cv::Mat data) { cur = cv::Mat_<float>(data); }
@@ -80,126 +97,110 @@ public:
         }
 
     cv::Mat_<float> getCommand() const { return command; }
-    float dX(float target) const { return target - cur.at<float>(0); }
-    float dY(float target) const { return target - cur.at<float>(1); }
-    float dTheta(float target) {
-        if (target - cur.at<float>(2) > pi) {
-            return (target - cur.at<float>(2)) - 2 * pi;
+    float dX(float targetX) const { 
+        return targetX - cur.at<float>(0); 
+    }
+    float dY(float targetY) const { 
+        return targetY - cur.at<float>(1);
+    }
+    float dTheta(float targetTheta) {
+        if (targetTheta - cur.at<float>(2) > pi) {
+            return (targetTheta - cur.at<float>(2)) - 2 * pi;
         }
-        else if (target - cur.at<float>(2) <= - pi) {
-            return (target - cur.at<float>(2)) + 2 * pi;
+        else if (targetTheta - cur.at<float>(2) <= - pi) {
+            return (targetTheta - cur.at<float>(2)) + 2 * pi;
         }
-        else { return target - cur.at<float>(2); }
+        else { 
+            return targetTheta - cur.at<float>(2); 
+        }
     }
 
-    float distance(){
-        float curX = cur.at<float>(0);
-        float curY = cur.at<float>(1);
-        float targetX = waypoints.at<float>(0, waypoint_num);
-        float targetY = waypoints.at<float>(1, waypoint_num);
-        /* std::cout << sqrt(pow(targetX - curX, 2) + pow(targetY - curY, 2)) << std::endl; */
-        return sqrt(pow(targetX - curX, 2) + pow(targetY - curY, 2));
-
+    float distance(float targetX, float targetY){ // 목적지에서 실제 경로에 수선의 발을 내렸을 때 현재 위치와 수선의 발까지의 거리
+        return sqrt( pow(dX(targetX), 2) + pow(dY(targetY), 2) ) * cos( dTheta(targetTheta) );
     }
-    float error(){
+    
+    float error(){ // 진행 경로에서 얼마나 벗어나는 지
         float x1 = waypoints.at<float>(0, waypoint_num-1);
         float y1 = waypoints.at<float>(1, waypoint_num-1);
         float x2 = waypoints.at<float>(0, waypoint_num);
         float y2 = waypoints.at<float>(1, waypoint_num);
         float curX = cur.at<float>(0);
         float curY = cur.at<float>(1);
-        /* std::cout << "x1: " << x1 << " y1: " << y1 << " x2: " << x2 << " y2: " << y2 << std::endl;
-        std::cout << "curX: " << curX << " curY: " << curY << std::endl; */
+        // std::cout << "x1: " << x1 << " y1: " << y1 << " x2: " << x2 << " y2: " << y2 << std::endl;
+        // std::cout << "curX: " << curX << " curY: " << curY << std::endl; 
         
         float a = (y2 - y1);
         float b = - (x1 - x2);
         float c = - (y2 - y1) * x1 + y1 * (x2 - x1);
-        /* std::cout << "a: " << a << " b: " << b << " c: " << c << std::endl; */
+        // std::cout << "a: " << a << " b: " << b << " c: " << c << std::endl;
 
         cv::Mat vector1 = (cv::Mat_<float>(3, 1) << curX - x1, curY - y1, 0.0); // 출발 점 기준으로 현재 위치 벡터
-        /* std::cout << "vector1: " << vector1 << std::endl; */
+        // std::cout << "vector1: " << vector1 << std::endl;
         cv::Mat vector2 = (cv::Mat_<float>(3, 1) << x2 - x1, y2 - y1, 0.0); // 출발 점 기준으로 도착 점 벡터
-        /* std::cout << "vector2: " << vector2 << std::endl;
- */
+        // std::cout << "vector2: " << vector2 << std::endl;
         cv::Mat result = vector1.cross(vector2); // 두 벡터를 외적해서 z의 값이 양수인지 음수인지 확인
-        /* std::cout << "result: " << result << std::endl; */
-        if ( result.at<float>(2) >= 0 ) { // 양수이면 오른쪽에 있음
-            /* std::cout << "진행 경로의 오른쪽에 있음"<< std::endl; */
-            std::cout << "error: " << abs(a * curX + b * curY + c) / sqrt(pow(a, 2) + pow(b, 2)) << std::endl;
+        // std::cout << "result: " << result << std::endl;
+
+        if ( sqrt(pow(a, 2) + pow(b, 2)) == 0 ) { // 아래 식에서 분모가 0이 되는 경우 방지
+            return 0;
+        }
+        if ( result.at<float>(2) >= 0 ) { // 양수이면 진행 경로의 오른쪽에 있음
             return abs(a * curX + b * curY + c) / sqrt(pow(a, 2) + pow(b, 2));
         }
-        else { // 음수이면 왼쪽에 있음
-            /* std::cout << "진행 경로의 왼쪽에 있음" << std::endl; */
-            std::cout << "error: " << - abs(a * curX + b * curY + c) / sqrt(pow(a, 2) + pow(b, 2)) << std::endl;
+        else { // 음수이면 진행 경로의 왼쪽에 있음
             return - abs(a * curX + b * curY + c) / sqrt(pow(a, 2) + pow(b, 2));
         }
     }
 
-    void moveLinear(){
-        float targetX = waypoints.at<float>(0, waypoint_num);
-        float targetY = waypoints.at<float>(1, waypoint_num);
-        command.at<float>(0) = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency + 0.03f, linearMax), gainLinear * distance());
+    void moveLinear(float targetX, float targetY){
+        float v = Kp_Linear * distance(targetX, targetY) + Ki_Linear * sum_distance + Kd_Linear * (distance(targetX, targetY) - past_distance) * velocity_command_frequency;
         
-        // path에서 많이 벗어날 수록 gainAngular 가 커지도록 설정
-        command.at<float>(1) = P_Gain * error();
-        std::cout << "command.z" << command.at<float>(1) << std::endl;
-        /* std::cout << "command: " << command << std::endl; */
-        /* std::cout << "-------------------------------------" << std::endl; */
-    }
-    /* void moveX(float targetX) {
-        if (dX(targetX) >= 0) {
-            float targetTheta = 0;
-            if (abs(dTheta(targetTheta)) >= toleranceAngular) { moveTheta(targetTheta); }
-            else {
-                command.at<float>(1) = 0;               
-                command.at<float>(0) 
-                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency + 0.03f, linearMax), gainLinear * abs(dX(targetX)));
-                }
-            }
-        
-        else {
-            float targetTheta = pi;
-            if (abs(dTheta(targetTheta)) >= toleranceAngular) { moveTheta(targetTheta); }
-            else {
-                command.at<float>(1) = 0;
-                command.at<float>(0) 
-                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency + 0.03f, linearMax), gainLinear * abs(dX(targetX)));
-            }
+        if (v >= linearMax) {
+            command.at<float>(0) = linearMax;
         }
-    }
-    void moveY(float targetY) {
-        if (dY(targetY) >= 0) {
-            float targetTheta = pi/2;
-            if (abs(dTheta(targetTheta)) >= toleranceAngular) { moveTheta(targetTheta); }
-            else {
-                command.at<float>(1) = 0;
-                command.at<float>(0) 
-                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency + 0.03f, linearMax), gainLinear * abs(dY(targetY)));
-            }
+        else if (v <= - linearMax) {
+            command.at<float>(0) = - linearMax;
         }
         else {
-            float targetTheta = -pi/2;
-            if (abs(dTheta(targetTheta)) >= toleranceAngular) { moveTheta(targetTheta); }
-            else {
-                command.at<float>(1) = 0;
-                command.at<float>(0) 
-                = std::min(std::min(cur_vel.at<float>(0) + acc_linear / velocity_command_frequency + 0.03f, linearMax), gainLinear * abs(dY(targetY)));
-            }
+            command.at<float>(0) = v;
         }
-    } */
-    void moveTheta(float targetTheta) {
-        /* if (dTheta(targetTheta) >= 0) {
-            // abs를 붙인 이유 : 현재 각속도가 음수일 때 절대값을 취하면서 양수로 바뀌면서 목표 각속도보다 커지는 경우가 생김
-            command.at<float>(1) 
-            = std::min(std::min(abs(cur_vel.at<float>(1)) + acc_angular / velocity_command_frequency + 0.043f, AngularMax), gainAngular * abs(dTheta(targetTheta)));
-        }
-        else {
-            command.at<float>(1) 
-            = -std::min(std::min(abs(cur_vel.at<float>(1)) + acc_angular / velocity_command_frequency + 0.043f, AngularMax), gainAngular * abs(dTheta(targetTheta)));
-        } */
-        command.at<float>(1) 
-            = std::min(AngularMax, gainAngular * dTheta(targetTheta));
 
+        if ( dX(waypoints.at<float>(1, waypoint_num)) == 0){ // atan2 계산 시 분모가 0이 되는 경우 방지
+            if ( dY(waypoints.at<float>(0, waypoint_num)) >= 0) {
+                targetTheta = pi / 2;
+            }
+            else {
+                targetTheta = - pi / 2;
+            }
+        }
+        else {
+            targetTheta = atan2(dY(waypoints.at<float>(1, waypoint_num)), dX(waypoints.at<float>(0, waypoint_num)));
+        }
+        moveAngular(targetTheta);
+
+        sum_distance += distance(targetX, targetY);
+        past_distance = distance(targetX, targetY);
+        
+        // u(t) = Kp * e(t) + Kd * (e(t) - e(t-1)) / dt
+        /* float cur_error = error();
+        command.at<float>(1) = P_Gain * cur_error + (cur_error - past_error) * velocity_command_frequency;
+        past_error = cur_error; */
+    }
+   
+    void moveAngular(float targetTheta) {
+        float w = Kp_Angular * dTheta(targetTheta) + Ki_Angular * sum_dTheta + Kd_Angular * (dTheta(targetTheta) - past_dTheta) * velocity_command_frequency;
+        // 이 값이 AngularMax와 -AngularMax 사이에 오도록 함
+        if (w >= AngularMax) {
+            command.at<float>(1) = AngularMax;
+        }
+        else if (w <= -AngularMax) {
+            command.at<float>(1) = - AngularMax;
+        }
+        else {
+            command.at<float>(1) = w;}
+
+        sum_dTheta += dTheta(targetTheta);
+        past_dTheta = dTheta(targetTheta);
     }
 
     void moveToTarget() {
@@ -207,59 +208,64 @@ public:
             case 1:{ // waypoints 생성
                 setWaypoint();
                 std::cout << waypoints << std::endl;
-
                 moveCase = 2;
                 break;
             }
-
-            case 2:{ // waypoint를 바라보도록 회전
-                float targetTheta;
-                if ( dX(waypoints.at<float>(0, waypoint_num)) == 0 && dY(waypoints.at<float>(1, waypoint_num)) > 0 ) {
-                    targetTheta = pi/2;
-                }
-                else if ( dX(waypoints.at<float>(0, waypoint_num)) == 0 && dY(waypoints.at<float>(1, waypoint_num)) < 0 ) {
-                    targetTheta = -pi/2;
-                }
-                else if ( dX(waypoints.at<float>(0, waypoint_num)) > 0 && dY(waypoints.at<float>(1, waypoint_num)) == 0 ) {
-                    targetTheta = 0;
-                }
-                else if ( dX(waypoints.at<float>(0, waypoint_num)) < 0 && dY(waypoints.at<float>(1, waypoint_num)) == 0 ) {
-                    targetTheta = pi;
-                }
-                else if ( dX(waypoints.at<float>(0, waypoint_num)) == 0 && dY(waypoints.at<float>(1, waypoint_num)) == 0 ) {
-                    break;
-                } 
-                else {
-                    targetTheta = atan2(waypoints.at<float>(1, waypoint_num) - cur.at<float>(1), waypoints.at<float>(0, waypoint_num) - cur.at<float>(0)); 
-                }
-                if (abs(dTheta(targetTheta)) >= toleranceAngular) {
-                    moveTheta(targetTheta);
-                    // std::cout << dTheta(targetTheta) << std::endl;
+            
+            case 2:{ // I, D 제어를 위한 초기화
+                past_dTheta = 0;
+                sum_dTheta = 0;
+                moveCase = 3;
+                break;
+            }
+            
+            case 3:{ // waypoint를 바라보도록 회전      
+                if ( dX(waypoints.at<float>(1, waypoint_num)) == 0 ) { // atan2 계산 시 분모가 0이 되는 경우 방지
+                    if ( dY(waypoints.at<float>(0, waypoint_num)) >= 0 ) {
+                        targetTheta = pi / 2;
+                    }
+                    else {
+                        targetTheta = - pi / 2;
+                    }
                 }
                 else {
-                    command.at<float>(1) = 0;
-                    command.at<float>(0) = 0;
-                    moveCase = 3;
+                    targetTheta = atan2(dY(waypoints.at<float>(1, waypoint_num)), dX(waypoints.at<float>(0, waypoint_num)));
                 }
                 
+                if (abs(dTheta(targetTheta)) >= toleranceAngular) {
+                    moveAngular(targetTheta);
+                }
+                else {
+                    moveCase = 4;
+                }
                 break;
-
             }
 
-            case 3:{ // waypoint로 이동
-                if ( distance() > toleranceLinear ) {
-                    moveLinear();
-                    
+            case 4:{ // I, D 제어를 위한 초기화
+                past_distance = 0;
+                sum_distance = 0;
+                moveCase = 5;
+                break;
+            }
+
+            case 5:{ // waypoint로 직진
+                float targetX = waypoints.at<float>(0, waypoint_num);
+                float targetY = waypoints.at<float>(1, waypoint_num);
+                if ( abs(distance(targetX, targetY)) > toleranceLinear ) {  
+                    moveLinear(targetX, targetY);
+                    // std::cout << "error: " << error() << std::endl;
                 }
                 else {
                     command.at<float>(0) = 0;
                     command.at<float>(1) = 0;
-                    if ( waypoint_num < waypoints.cols ) {
+                    if ( waypoint_num < waypoints.cols - 1 ) {
+                        std::cout << waypoints.cols - 1 << "개의 웨이포인트 중에 " << waypoint_num << "번째 웨이포인트 도착" << std::endl; 
                         waypoint_num++;
                         moveCase = 2;
                     }
                     else { // 최종 목적지 도달
-                        std::cout << "도착하였습니다." << std::endl;
+                        std::cout << "********* 최종 목적지 도착 **********" << std::endl;
+                        waypoint_num = 1;
                         moveCase = 0;
                     }
                 } 
@@ -267,90 +273,7 @@ public:
             }
 
         }
-        // std::cout << moveCase << std::endl;
     }
 };
 
 #endif // AGV_CONTROLLER_HPP
-
-
-            /* 예전 코드 
-            case 1: { // y=0 도착
-                if (abs(dY(0)) > toleranceLinear) {
-                    moveY(0);            
-                }
-                else {  
-                    command.at<float>(0) = 0;
-                    command.at<float>(1) = 0;
-                    moveCase = 2;
-                }
-                break;
-            }
-
-            case 2: { // x축으로 회전
-                if (dX(targetX) >= 0) {
-                    float targetTheta = 0;
-                    if (abs(dTheta(targetTheta)) >= toleranceAngular) { moveTheta(targetTheta); }
-                    else{
-                        command.at<float>(1) = 0;               
-                        command.at<float>(0) = 0;       
-                        moveCase = 3;                       
-                    }
-                }
-                else {
-                    float targetTheta = pi;
-                    if (abs(dTheta(targetTheta)) >= toleranceAngular) { moveTheta(targetTheta); }
-                    else{
-                        command.at<float>(1) = 0;               
-                        command.at<float>(0) = 0;
-                        moveCase = 3;                              
-                    }
-                }
-                break;
-            }
-
-            case 3: { // X축 도착
-                if (abs(dX(tar.at<float>(0))) > toleranceLinear) {
-                    moveX(tar.at<float>(0));
-                }
-                else { 
-                    command.at<float>(0) = 0;
-                    command.at<float>(1) = 0;
-                    moveCase = 4;
-                }
-                break;
-            }
-
-            case 4: { // x축으로 회전
-                if (dX(targetY) >= 0) {
-                    float targetTheta = pi/2;
-                    if (abs(dTheta(targetTheta)) >= toleranceAngular) { moveTheta(targetTheta); }
-                    else{
-                        command.at<float>(1) = 0;               
-                        command.at<float>(0) = 0;   
-                        moveCase = 5;                           
-                    }
-                }
-                else {
-                    float targetTheta = - pi/2;
-                    if (abs(dTheta(targetTheta)) >= toleranceAngular) { moveTheta(targetTheta); }
-                    else{
-                        command.at<float>(1) = 0;               
-                        command.at<float>(0) = 0;
-                        moveCase = 5;                              
-                    }
-                }
-                break;
-            }
-
-            case 5: {
-                if (abs(dY(tar.at<float>(1)))  > toleranceLinear)  {
-                    moveY(tar.at<float>(1)); 
-                }
-                else { // Y축 도착
-                    command.at<float>(0) = 0; 
-                    command.at<float>(1) = 0;
-                    moveCase = 0;
-                }
-                break;
-            } */
