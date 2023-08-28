@@ -57,14 +57,14 @@ public:
         double Kp_Linear_ = 1.7, double Ki_Linear_ = 0.0, double Kd_Linear_ = 0.0, 
         double Kp_Angular_ = 4.7, double Ki_Angular_ = 0.0, double Kd_angular_ = 0.0, 
         double toleranceLinear_ = 0.01, double toleranceAngular_ = 0.005, double linearMax_=0.45, double AngularMax_=1, double velocity_command_frequency_=60.0) {
-        Kp_Linear = 1.7;
-        Ki_Linear = 0.0;
-        Kd_Linear = 0.0;
-        Kp_Angular = 4.7;
-        Ki_Angular = 0.0;
-        Kd_Angular = 0.0;
-        toleranceLinear = 0.005;
-        toleranceAngular = 0.005; // 나중에 파라미터로 설정
+        Kp_Linear = Kp_Linear_;
+        Ki_Linear = Ki_Linear_;
+        Kd_Linear = Kd_Linear_;
+        Kp_Angular = Kp_Angular_;
+        Ki_Angular = Ki_Angular_;
+        Kd_Angular = Kd_angular_;
+        toleranceLinear = toleranceLinear_;
+        toleranceAngular = toleranceAngular_;
         linearMax = linearMax_;
         AngularMax = AngularMax_;
         velocity_command_frequency = velocity_command_frequency_;
@@ -186,6 +186,8 @@ public:
             }
             
             case 2:{ // I, D 제어를 위한 초기화
+                past_distance = 0;
+                sum_distance = 0;
                 past_dTheta = 0;
                 sum_dTheta = 0;
                 moveCase = 3;
@@ -204,10 +206,12 @@ public:
                 }
                 break;
             }
-
+            
             case 4:{ // I, D 제어를 위한 초기화
                 past_distance = 0;
                 sum_distance = 0;
+                past_dTheta = 0;
+                sum_dTheta = 0;
                 moveCase = 5;
                 
                 break;
@@ -251,7 +255,7 @@ public:
                 }
                 break;
 
-            }
+            } */
         // cout << "moveCase: " << moveCase << endl;
         }
     }
