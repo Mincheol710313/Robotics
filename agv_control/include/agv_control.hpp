@@ -53,7 +53,10 @@ private:
     };
     
 public:
-    CONTROL(double gainLinear_=0.5, double Kp_Angular_ = 0.3, double toleranceLinear_ = 0.01, double toleranceAngular_ = 0.005, double lin=0.45, double ang=1, double acc_lin=0.7, double acc_ang=2.5, double frequency=50.0) {
+    CONTROL(
+        double Kp_Linear_ = 1.7, double Ki_Linear_ = 0.0, double Kd_Linear_ = 0.0, 
+        double Kp_Angular_ = 4.7, double Ki_Angular_ = 0.0, double Kd_angular_ = 0.0, 
+        double toleranceLinear_ = 0.01, double toleranceAngular_ = 0.005, double linearMax_=0.45, double AngularMax_=1, double velocity_command_frequency_=60.0) {
         Kp_Linear = 1.7;
         Ki_Linear = 0.0;
         Kd_Linear = 0.0;
@@ -62,11 +65,9 @@ public:
         Kd_Angular = 0.0;
         toleranceLinear = 0.005;
         toleranceAngular = 0.005; // 나중에 파라미터로 설정
-        linearMax = lin;
-        AngularMax = ang;
-        acc_linear = acc_lin;
-        acc_angular = acc_ang;
-        velocity_command_frequency = 60;
+        linearMax = linearMax_;
+        AngularMax = AngularMax_;
+        velocity_command_frequency = velocity_command_frequency_;
     };
     
     void setCur(vector<double> data) { cur = data; }

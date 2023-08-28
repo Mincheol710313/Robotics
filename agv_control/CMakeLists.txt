@@ -9,7 +9,7 @@ project(agv_control)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-#  rospy
+  rospy
   std_msgs
   geometry_msgs
   agv_msgs
