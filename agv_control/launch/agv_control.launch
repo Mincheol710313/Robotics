@@ -2,7 +2,7 @@
 
 <launch>
 	<node name="agv_control" pkg="agv_control" type="agv_control" output="screen">
-		<param name="Kp_Linear" trype="double" value="1.7"/>
+		<param name="Kp_Linear" type="double" value="1.7"/>
 		<param name="Kd_Linear" type="double" value="0.0"/>
 		<param name="Ki_Linear" type="double" value="0.0"/>
 		<param name="Kp_Angular" type="double" value="4.7"/>

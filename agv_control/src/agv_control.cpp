@@ -49,7 +49,7 @@ public:
 
         control.reset(new CONTROL(Kp_Linear_, Ki_Linear_, Kd_Linear_, Kp_Angular_, Ki_Angular_, Kd_Angular_, toleranceLinear_, toleranceAngular_, linearMax_, AngularMax_, publish_velocity_command_frequency_));
 
-        estimated_position_subscriber_ = nh->subscribe("pos", 1, &ControlROSWrapper::callbackCurPose, this);
+        estimated_position_subscriber_ = nh->subscribe("pose", 1, &ControlROSWrapper::callbackCurPose, this);
         velocity_command_publisher_ = nh->advertise<geometry_msgs::Twist>("cmd_vel", 1);
         current_velocity_subscriber_= nh->subscribe("cur_vel", 1, &ControlROSWrapper::callbackCurVelocity, this);
         velocity_command_timer_ = nh->createTimer(ros::Duration(1.0 / publish_velocity_command_frequency_),&ControlROSWrapper::publishVelocityCommand, this);

@@ -206,8 +206,6 @@ public:
             }
 
             case 4:{ // I, D 제어를 위한 초기화
-                past_dTheta = 0;
-                sum_dTheta = 0;
                 past_distance = 0;
                 sum_distance = 0;
                 moveCase = 5;
