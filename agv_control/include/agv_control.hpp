@@ -132,8 +132,8 @@ public:
     void moveLinear(double targetX, double targetY){
         // u(t) = Kp * e(t) + Ki * sum(e(t)) * dt + Kd * (e(t) - e(t-1)) / dt
         double v = Kp_Linear * distance(targetX, targetY) + Ki_Linear * sum_distance / velocity_command_frequency + Kd_Linear * (distance(targetX, targetY) - past_distance) * velocity_command_frequency;
-        cout << "distance: " << distance(targetX, targetY) << endl;
-        cout << "v: " << v << endl;
+        // cout << "distance: " << distance(targetX, targetY) << endl;
+        // cout << "v: " << v << endl;
         if (v >= linearMax) {
             command[0] = linearMax;
         }
