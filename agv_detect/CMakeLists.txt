@@ -9,7 +9,6 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   sensor_msgs
   tf
-  realsense2
 )
 
 catkin_package(
@@ -23,7 +22,6 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
-  ${realsense2_INCLUDE_DIRS}
 )
 
 add_executable(aruco_detect src/aruco_detect.cpp)
@@ -32,5 +30,4 @@ target_link_libraries(
   aruco_detect
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
-  ${realsense2_LIBRARY}
 )
