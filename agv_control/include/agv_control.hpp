@@ -132,7 +132,8 @@ public:
     void moveLinear(double targetX, double targetY){
         // u(t) = Kp * e(t) + Ki * sum(e(t)) * dt + Kd * (e(t) - e(t-1)) / dt
         double v = Kp_Linear * distance(targetX, targetY) + Ki_Linear * sum_distance / velocity_command_frequency + Kd_Linear * (distance(targetX, targetY) - past_distance) * velocity_command_frequency;
-        
+        cout << "distance: " << distance(targetX, targetY) << endl;
+        cout << "v: " << v << endl;
         if (v >= linearMax) {
             command[0] = linearMax;
         }
@@ -143,7 +144,7 @@ public:
             command[0] = v;
         }
 
-        if (distance(targetX, targetY) > 0) { // agv가 waypoint를 넘었을 때 갑자기 뒤로 도는 경우를 방지
+        if (distance(targetX, targetY) > 0.5) { // agv가 waypoint를 넘었을 때 갑자기 크게 회전하는 경우를 방지
             moveAngular(targetTheta());
         }
         else {
@@ -181,6 +182,7 @@ public:
 
             case 1:{ // waypoints 생성
                 setWaypoint();
+                waypoint_num = 1;
                 moveCase = 2;
                 break;
             }
@@ -194,7 +196,7 @@ public:
                 
                 break;
             }
-            
+
             case 3:{ // waypoint를 바라보도록 회전
                 if (( abs(dTheta(targetTheta())) <= toleranceAngular ) && ( abs(cur_vel[1]) <= 0.01 )){
                     command[0] = 0;
@@ -237,7 +239,7 @@ public:
                 }
                 else { // 최종 목적지 도달
                     cout << "********* 최종 목적지 도착 **********" << endl;
-                    waypoint_num = 1;
+                    
                     moveCase = 7;
                 }
                 break;
@@ -255,7 +257,7 @@ public:
                 }
                 break;
 
-            } */
+            }
         // cout << "moveCase: " << moveCase << endl;
         }
     }
