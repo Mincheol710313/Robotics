@@ -1,7 +1,7 @@
 <launch>
   <arg name="wheel_diameter" default="0.130"/>
   <arg name="wheel_width" default="0.64547"/>
-  <arg name="publish_current_odometry_frequency" default="100"/>
+  <arg name="publish_current_odometry_frequency" default="300"/>
   <arg name="broadcast_tf" default="true"/>
 
   <node pkg="ip200_core" type="ip200_driver" name="ip200_driver" output="screen">

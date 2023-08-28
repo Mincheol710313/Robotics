@@ -4,6 +4,7 @@
 
 #include <ros/ros.h>
 #include <ros/console.h>
+#include <iostream>
 
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Pose2D.h>
@@ -18,6 +19,8 @@
 #define WHELL_WITH 0.4972
 #define GEAR_RATIO 40
 
+using namespace std;
+
 namespace aidl
 {
 	class ip200BodyNode
@@ -25,15 +28,15 @@ namespace aidl
 	private:
 		enum
 		{
-			COMPUTE_ODOMETRY_FREQUENCY = 100
+			COMPUTE_ODOMETRY_FREQUENCY = 300
 		};
 		enum
 		{
-			PUBLISH_CURRENT_ODOMETRY_FREQUENCY = 100
+			PUBLISH_CURRENT_ODOMETRY_FREQUENCY = 300
 		};
 		enum
 		{
-			PUBLISH_CMD_RPM_FREQUENCY = 100
+			PUBLISH_CMD_RPM_FREQUENCY = 300
 		};
 		enum
 		{
@@ -49,6 +52,8 @@ namespace aidl
 
 		double wheel_diameter_;
 		double wheel_width_;
+
+		bool pose_flag;
 
 		ros::NodeHandle *nh_private_;
 
@@ -80,6 +85,8 @@ namespace aidl
 
 			motor_left_rpm_ = 0;
 			motor_right_rpm_ = 0;
+
+			pose_flag = false;
 
 			if (!ros::param::get("~broadcast_tf", broadcast_tf_))
 				broadcast_tf_ = true;
@@ -172,7 +179,16 @@ namespace aidl
 		{
 			if (msg.x != 0 && msg.y != 0 && msg.theta != 0)
 			{
-				if (abs(x_ - msg.x) < 1.0 && abs(y_ - msg.y))
+				if(!pose_flag)
+				{
+					x_ = msg.x;
+					y_ = msg.y;
+					th_ = msg.theta;
+
+					pose_flag = true;
+					cout << "pose reset" << endl;
+				}
+				else if (abs(x_ - msg.x) < 1.0 && abs(y_ - msg.y) < 1.0)
 				{
 					x_ = msg.x;
 					y_ = msg.y;
