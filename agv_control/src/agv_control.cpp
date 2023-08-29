@@ -30,8 +30,6 @@ private:
     double publish_velocity_command_frequency_;
     double markerDistance_;
     double lookaheadDistance_;
-    
-    
 
 public:
     ControlROSWrapper(ros::NodeHandle *nh) {

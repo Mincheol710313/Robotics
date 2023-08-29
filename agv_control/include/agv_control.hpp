@@ -240,21 +240,30 @@ public:
                 break;
             }
             
-            case 2:{ // I, D 제어를 위한 초기화
+            case 2:{ // 웨이포인트를 생략할 지 결정
+                if ( waypoints[waypoint_num] == waypoints[waypoint_num - 1] ) { // 이전 웨이포인트와 현재 웨이포인트가 같은 경우
+                    moveCase = 7;
+                }
+                else if ( abs(distance(waypoints[waypoint_num][0], waypoints[waypoint_num][1])) <= toleranceLinear ) { // 현재 위치가 현재 웨이포인트에 너무 가까운 경우
+                    moveCase = 7;
+                }
+                moveCase = 3;
+                break;
+            }
+            case 3:{ // I, D 제어를 위한 초기화
                 past_distance = 0;
                 sum_distance = 0;
                 past_dTheta = 0;
                 sum_dTheta = 0;
-                moveCase = 3;
-                
+                moveCase = 4;
                 break;
             }
 
-            case 3:{ // waypoint를 바라보도록 회전
+            case 4:{ // waypoint를 바라보도록 회전
                 if (( abs(dTheta(targetTheta())) <= toleranceAngular ) && ( abs(cur_vel[1]) <= 0.01 )){
                     command[0] = 0;
                     command[1] = 0;
-                    moveCase = 4;            
+                    moveCase = 5;            
                 }
                 else {
                     moveAngular(targetTheta()); 
@@ -262,22 +271,21 @@ public:
                 break;
             }
             
-            case 4:{ // I, D 제어를 위한 초기화
+            case 5:{ // I, D 제어를 위한 초기화
                 past_distance = 0;
                 sum_distance = 0;
                 past_dTheta = 0;
                 sum_dTheta = 0;
-                moveCase = 5;
+                moveCase = 6;
                 
                 break;
             }
 
-            case 5:{ // waypoint를 향해 직진
+            case 6:{ // waypoint를 향해 직진
                 if (( abs(distance(waypoints[waypoint_num][0], waypoints[waypoint_num][1])) <= toleranceLinear ) && ( abs(cur_vel[0]) <= 0.001 )) {  
-                    cout << "웨이포인트 도착 " << "(" << waypoint_num << "/" << waypoints.size() -1 << ")" << endl;
                     command[0] = 0;
                     command[1] = 0;
-                    moveCase = 6;
+                    moveCase = 7;
                 }
                 else {
                     double targetX = ahead_target()[0];
@@ -287,20 +295,20 @@ public:
                 break;
             }
 
-            case 6:{ // 최종 목적지인지 아닌지 판별
+            case 7:{ // 최종 목적지인지 아닌지 판별
+                cout << "웨이포인트 도착 " << "(" << waypoint_num << "/" << waypoints.size() -1 << ")" << endl;
                 if ( waypoint_num < waypoints.size() - 1 ) {
-                    waypoint_num++;
+                    waypoint_num ++;
                     moveCase = 2;
                 }
                 else { // 최종 목적지 도달
                     cout << "********* 최종 목적지 도착 **********" << endl;
-                    
-                    moveCase = 7;
+                    moveCase = 8;
                 }
                 break;
             }
 
-            case 7:{ // 각도를 0으로 맞추기 위한 회전
+            case 8:{ // 각도를 0으로 맞추기 위한 회전
                 if (( abs(dTheta(0)) <= toleranceAngular ) && ( abs(cur_vel[1]) <= 0.01 )){
                     command[0] = 0;
                     command[1] = 0;
