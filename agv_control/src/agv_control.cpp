@@ -29,6 +29,7 @@ private:
     double AngularMax_;
     double publish_velocity_command_frequency_;
     double markerDistance_;
+    double lookaheadDistance_;
     
     
 
@@ -46,8 +47,13 @@ public:
         if (!ros::param::get("~AngularMax", AngularMax_)) { AngularMax_ = 1.0; }
         if (!ros::param::get("~publish_velocity_command_frequency", publish_velocity_command_frequency_)) { publish_velocity_command_frequency_ = 600.0; }
         if (!ros::param::get("~markerDistance", markerDistance_)) { markerDistance_ = 1.8; }
+        if (!ros::param::get("~lookaheadDistance", lookaheadDistance_)) { lookaheadDistance_ = 1.0; }
 
-        control.reset(new CONTROL(Kp_Linear_, Ki_Linear_, Kd_Linear_, Kp_Angular_, Ki_Angular_, Kd_Angular_, toleranceLinear_, toleranceAngular_, linearMax_, AngularMax_, publish_velocity_command_frequency_));
+        control.reset(new CONTROL(
+            Kp_Linear_, Ki_Linear_, Kd_Linear_, 
+            Kp_Angular_, Ki_Angular_, Kd_Angular_, 
+            toleranceLinear_, toleranceAngular_, linearMax_, AngularMax_, 
+            publish_velocity_command_frequency_, lookaheadDistance_));
 
         estimated_position_subscriber_ = nh->subscribe("pose", 1, &ControlROSWrapper::callbackCurPose, this);
         velocity_command_publisher_ = nh->advertise<geometry_msgs::Twist>("cmd_vel", 1);

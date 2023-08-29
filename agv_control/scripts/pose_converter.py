@@ -22,7 +22,7 @@ def turtlesim_pose_callback(data):
 if __name__ == '__main__':
     rospy.init_node('pose_converter', anonymous = True)
     
-    pose2d_pub = rospy.Publisher('/pos', Pose2D, queue_size = 1)
+    pose2d_pub = rospy.Publisher('/pose', Pose2D, queue_size = 1)
     twist_pub = rospy.Publisher('/cur_vel', Twist, queue_size = 1)
     
     rospy.Subscriber('/turtle1/pose', Pose, turtlesim_pose_callback)

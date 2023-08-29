@@ -24,9 +24,8 @@ private:
     double AngularMax;
     double pi = 3.141592;
     int moveCase = 0;
-    double acc_linear;
-    double acc_angular;
     double velocity_command_frequency;
+    double lookaheadDistance;
     double waypoint_num = 1; // 몇 번째 waypoint 인지
     double past_distance; // 이전 거리, D 제어를 하기 위함
     double sum_distance; // 거리의 합, I 제어를 하기 위함
@@ -56,7 +55,8 @@ public:
     CONTROL(
         double Kp_Linear_ = 1.7, double Ki_Linear_ = 0.0, double Kd_Linear_ = 0.0, 
         double Kp_Angular_ = 4.7, double Ki_Angular_ = 0.0, double Kd_angular_ = 0.0, 
-        double toleranceLinear_ = 0.01, double toleranceAngular_ = 0.005, double linearMax_=0.45, double AngularMax_=1, double velocity_command_frequency_=60.0) {
+        double toleranceLinear_ = 0.01, double toleranceAngular_ = 0.005, double linearMax_ = 0.45, double AngularMax_ = 1, 
+        double velocity_command_frequency_ = 60.0, double lookaheadDistance_ = 1.0) {
         Kp_Linear = Kp_Linear_;
         Ki_Linear = Ki_Linear_;
         Kd_Linear = Kd_Linear_;
@@ -68,6 +68,7 @@ public:
         linearMax = linearMax_;
         AngularMax = AngularMax_;
         velocity_command_frequency = velocity_command_frequency_;
+        lookaheadDistance = lookaheadDistance_;
     };
     
     void setCur(vector<double> data) { cur = data; }
@@ -129,11 +130,63 @@ public:
     double distance(double targetX, double targetY){ // 목적지에서 현재 경로에 수선의 발을 내렸을 때 현재 위치와 수선의 발까지의 거리. 즉 이동해야 할 거리
         return sqrt( pow(dX(targetX), 2) + pow(dY(targetY), 2) ) * cos( dTheta(targetTheta()) );}
 
+    vector<double> ahead_target(){ // 실시간으로 lookaheadDistance만큼의 거리에 있는 target을 구하는 함수
+    // https://vinesmsuic.github.io/robotics-purepersuit/#Lookahead-Point 참고
+
+        vector<double> d = 
+        { waypoints[waypoint_num][0] - waypoints[waypoint_num - 1][0], waypoints[waypoint_num][1] - waypoints[waypoint_num - 1][1] };
+        // 이전 웨이포인트(출발점)에서에서 현재 웨이포인트(도착점)를 바라보는 벡터
+        vector<double> f = { waypoints[waypoint_num - 1][0] - avg_cur[0], waypoints[waypoint_num - 1][1] - avg_cur[1] };
+        // 로봇의 현재 위치에서 이전 웨이포인트(출발점)를 바라보는 벡터
+        
+        double a = d[0] * d[0] + d[1] * d[1];
+        double b = 2 * (f[0] * d[0] + f[1] * d[1]);
+        double c = f[0] * f[0] + f[1] * f[1] - lookaheadDistance * lookaheadDistance;
+        double discriminant = b * b - 4 * a * c;
+        double t;
+
+        double targetX;
+        double targetY;
+
+        if (a == 0) { // a로 나누는 경우 방지 (이전 웨이포인트와 현재 웨이포인트가 같을 때)
+            targetX = waypoints[waypoint_num][0];
+            targetY = waypoints[waypoint_num][1];
+        }
+        else if (discriminant < 0) {
+            targetX = waypoints[waypoint_num][0];
+            targetY = waypoints[waypoint_num][1];
+        }
+        else if ( sqrt(pow(dX(waypoints[waypoint_num][0]), 2) + pow(dY(waypoints[waypoint_num][1]), 2)) <= lookaheadDistance ) {
+            // 목적지가 lookaheadDistance보다 가까움
+            targetX = waypoints[waypoint_num][0];
+            targetY = waypoints[waypoint_num][1];
+        }
+        else {
+            discriminant = sqrt(discriminant);
+            double t1 = (- b - discriminant) / (2 * a);
+            double t2 = (- b + discriminant) / (2 * a);
+
+            if ( (t1 >= 0) && (t1 <= 1) ) {
+                targetX = waypoints[waypoint_num - 1][0] + d[0] * t1;
+                targetY = waypoints[waypoint_num - 1][1] + d[1] * t1;
+            }
+            else if( (t2 >= 0) && (t2 <= 1) ) {
+                targetX = waypoints[waypoint_num - 1][0] + d[0] * t2;
+                targetY = waypoints[waypoint_num - 1][1] + d[1] * t2;
+            }
+            else {
+                targetX = waypoints[waypoint_num][0];
+                targetY = waypoints[waypoint_num][1];
+            }
+        }
+
+        return {targetX, targetY};
+    }
+
     void moveLinear(double targetX, double targetY){
         // u(t) = Kp * e(t) + Ki * sum(e(t)) * dt + Kd * (e(t) - e(t-1)) / dt
         double v = Kp_Linear * distance(targetX, targetY) + Ki_Linear * sum_distance / velocity_command_frequency + Kd_Linear * (distance(targetX, targetY) - past_distance) * velocity_command_frequency;
-        // cout << "distance: " << distance(targetX, targetY) << endl;
-        // cout << "v: " << v << endl;
+    
         if (v >= linearMax) {
             command[0] = linearMax;
         }
@@ -227,7 +280,9 @@ public:
                     moveCase = 6;
                 }
                 else {
-                    moveLinear(waypoints[waypoint_num][0], waypoints[waypoint_num][1]);
+                    double targetX = ahead_target()[0];
+                    double targetY = ahead_target()[1];
+                    moveLinear(targetX, targetY);
                 } 
                 break;
             }
@@ -235,7 +290,7 @@ public:
             case 6:{ // 최종 목적지인지 아닌지 판별
                 if ( waypoint_num < waypoints.size() - 1 ) {
                     waypoint_num++;
-                    moveCase = 2; // 원래 2, PID 튜닝할 때는 0으로 바꿔서 튜닝
+                    moveCase = 2;
                 }
                 else { // 최종 목적지 도달
                     cout << "********* 최종 목적지 도착 **********" << endl;

@@ -42,7 +42,7 @@ def odom_callback(odom_msg):
 rospy.init_node('odometry_converter')
 
 # Initialize publishers
-estimated_pos_pub = rospy.Publisher('pos', Pose2D, queue_size=1)
+estimated_pos_pub = rospy.Publisher('pose', Pose2D, queue_size=1)
 cur_vel_pub = rospy.Publisher('cur_vel', Twist, queue_size=1)
 
 # Subscribe to Odometry topic

@@ -14,5 +14,6 @@
 		<param name="angularMax" type="double" value="1.0"/>
 		<param name="publish_velocity_command_frequency" type="double" value="600.0"/>
 		<param name="markerDistance" type="double" value="1.8"/>
+		<param name="lookaheadDistance" type="double" value="1.8"/>
 	</node>
 </launch>
