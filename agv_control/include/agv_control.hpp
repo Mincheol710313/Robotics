@@ -156,8 +156,9 @@ public:
             targetX = waypoints[waypoint_num][0];
             targetY = waypoints[waypoint_num][1];
         }
-        else if ( sqrt(pow(dX(waypoints[waypoint_num][0]), 2) + pow(dY(waypoints[waypoint_num][1]), 2)) <= lookaheadDistance ) {
-            // 목적지가 lookaheadDistance보다 가까움
+        else if ( sqrt(pow(dX(waypoints[waypoint_num][0]), 2) + pow(dY(waypoints[waypoint_num][1]), 2)) <= lookaheadDistance * 1.5) {
+            // 목적지가 lookaheadDistance보다 가까울 때 예외처리를 안하면 target을 뒤로 잡아버림.
+            // 또한, 일정 보정계수를 안 곱하면 목적지와의 거리와 lookaheadDistance가 비슷해질 때target을 뒤로 잡아버림.
             targetX = waypoints[waypoint_num][0];
             targetY = waypoints[waypoint_num][1];
         }
@@ -241,11 +242,10 @@ public:
             }
             
             case 2:{ // 웨이포인트를 생략할 지 결정
-                cout << abs(distance(waypoints[waypoint_num][0], waypoints[waypoint_num][1])) << endl;
                 if ( waypoints[waypoint_num] == waypoints[waypoint_num - 1] ) { // 이전 웨이포인트와 현재 웨이포인트가 같은 경우
                     moveCase = 7;
                 }
-                else if ( abs(distance(waypoints[waypoint_num][0], waypoints[waypoint_num][1])) <= toleranceLinear ) { // 현재 위치가 현재 웨이포인트에 너무 가까운 경우
+                else if ( sqrt( pow(dX(waypoints[waypoint_num][0]), 2) + pow(dY(waypoints[waypoint_num][1]), 2) ) <= toleranceLinear ) { // 현재 위치가 현재 웨이포인트에 너무 가까운 경우
                     moveCase = 7;
                 }
                 else { moveCase = 3; }
@@ -268,7 +268,7 @@ public:
                     moveCase = 5;            
                 }
                 else {
-                    moveAngular(targetTheta()); 
+                    moveAngular(targetTheta());
                 }
                 break;
             }
@@ -304,7 +304,7 @@ public:
                     moveCase = 2;
                 }
                 else { // 최종 목적지 도달
-                    cout << "********* 최종 목적지 도착 **********" << endl;
+                    cout << "최종 목적지 도착" << endl;
                     moveCase = 8;
                 }
                 break;
