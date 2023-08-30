@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.0.2)
 project(agv_detect)
 
 find_package(OpenCV 4 REQUIRED)
-find_package(realsense2 REQUIRED)
 
 find_package(catkin REQUIRED COMPONENTS
   image_transport
