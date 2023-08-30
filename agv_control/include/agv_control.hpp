@@ -241,13 +241,15 @@ public:
             }
             
             case 2:{ // 웨이포인트를 생략할 지 결정
+                cout << abs(distance(waypoints[waypoint_num][0], waypoints[waypoint_num][1])) << endl;
                 if ( waypoints[waypoint_num] == waypoints[waypoint_num - 1] ) { // 이전 웨이포인트와 현재 웨이포인트가 같은 경우
                     moveCase = 7;
                 }
                 else if ( abs(distance(waypoints[waypoint_num][0], waypoints[waypoint_num][1])) <= toleranceLinear ) { // 현재 위치가 현재 웨이포인트에 너무 가까운 경우
                     moveCase = 7;
                 }
-                moveCase = 3;
+                else { moveCase = 3; }
+
                 break;
             }
             case 3:{ // I, D 제어를 위한 초기화
@@ -321,8 +323,9 @@ public:
                 break;
 
             }
-        // cout << "moveCase: " << moveCase << endl;
+        
         }
+        // cout << "moveCase: " << moveCase << endl;
     }
 };
 
