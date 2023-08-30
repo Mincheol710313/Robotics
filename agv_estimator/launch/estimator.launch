@@ -1,4 +1,0 @@
-<launch>
-	<node name="agv_estimator" pkg="agv_estimator" type="agv_estimator" output="screen">
-	</node>
-</launch>
