@@ -113,9 +113,10 @@ public:
             return targetTheta - avg_cur[2]; 
         }
     }
-    double targetTheta(){ // 목적지를 바라보는 각도
-        if ( dX(waypoints[waypoint_num][1]) == 0){ // atan2 계산 시 분모가 0이 되는 경우 방지
-            if ( dY(waypoints[waypoint_num][0]) >= 0) {
+
+    double targetTheta(double targetX, double targetY){ // 목적지를 바라보는 각도
+        if ( dX(targetX) == 0){ // atan2 계산 시 분모가 0이 되는 경우 방지
+            if ( dY(targetY >= 0) ){
                 return pi / 2;
             }
             else {
@@ -123,7 +124,7 @@ public:
             }
         }
         else {
-            return atan2(dY(waypoints[waypoint_num][1]), dX(waypoints[waypoint_num][0]));
+            return atan2(dY(targetY), dX(targetX));
         }
     }
 
@@ -203,13 +204,11 @@ public:
         }
 
         if ( sqrt( pow(dX(waypoints[waypoint_num][0]), 2) + pow(dY(waypoints[waypoint_num][1]), 2) ) > 0.5) { // agv가 waypoint를 넘었을 때 갑자기 크게 회전하는 경우를 방지
-            moveAngular(targetTheta());
+            moveAngular(targetTheta(targetX, targetY));
         }
         else {
             command[1] = 0;
         }
-        cout << "distance: " << sqrt( pow(dX(waypoints[waypoint_num][0]), 2) + pow(dY(waypoints[waypoint_num][1]), 2) ) << endl; // "distance:
-        cout << "w: " << command[1] << endl;
 
         sum_distance += distance(targetX, targetY);
         past_distance = distance(targetX, targetY);
@@ -268,13 +267,15 @@ public:
             }
 
             case 4:{ // waypoint를 바라보도록 회전
-                if (( abs(dTheta(targetTheta())) <= toleranceAngular ) && ( abs(cur_vel[1]) <= 0.01 )){
+                double targetX = waypoints[waypoint_num][0];
+                double targetY = waypoints[waypoint_num][1];
+                if (( abs(dTheta(targetTheta(targetX, targetY))) <= toleranceAngular ) && ( abs(cur_vel[1]) <= 0.01 )){
                     command[0] = 0;
                     command[1] = 0;
                     moveCase = 5;            
                 }
                 else {
-                    moveAngular(targetTheta());
+                    moveAngular(targetTheta(targetX, targetY));
                 }
                 break;
             }
