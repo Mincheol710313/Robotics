@@ -127,8 +127,17 @@ public:
         }
     }
 
-    double distance(double targetX, double targetY){ // 목적지에서 현재 경로에 수선의 발을 내렸을 때 현재 위치와 수선의 발까지의 거리. 즉 이동해야 할 거리
-        return sqrt( pow(dX(targetX), 2) + pow(dY(targetY), 2) ) * cos( dTheta(targetTheta()) );}
+    double distance(double targetX, double targetY){ // 목적지까지의 거리
+        vector<double> v1 = {avg_cur[0] - targetX, avg_cur[1] - targetY}; // 웨이포인트(목적지)에서 현재 위치를 바라보는 벡터
+        vector<double> v2 = {waypoints[waypoint_num - 1][0] - targetX, waypoints[waypoint_num - 1][1] - targetY}; // 웨이포인트(목적지)에서 이전 웨이포인트(출발지)를 바라보는 벡터
+
+        if (sqrt( pow(v2[0], 2) + pow(v2[1], 2) ) == 0) { // 분모가 0이 되는 경우 방지
+            return 0;
+        }
+        else {
+            return (v1[0] * v2[0] + v1[1] * v2[1]) / sqrt( pow(v2[0], 2) + pow(v2[1], 2) );
+        }
+    }
 
     vector<double> ahead_target(){ // 실시간으로 lookaheadDistance만큼의 거리에 있는 target을 구하는 함수
     // https://vinesmsuic.github.io/robotics-purepersuit/#Lookahead-Point 참고
@@ -153,12 +162,11 @@ public:
             targetY = waypoints[waypoint_num][1];
         }
         else if (discriminant < 0) {
+            cout << "lookaheadDistance가 너무 작습니다." << endl;
             targetX = waypoints[waypoint_num][0];
             targetY = waypoints[waypoint_num][1];
         }
-        else if ( sqrt(pow(dX(waypoints[waypoint_num][0]), 2) + pow(dY(waypoints[waypoint_num][1]), 2)) <= lookaheadDistance * 1.5) {
-            // 목적지가 lookaheadDistance보다 가까울 때 예외처리를 안하면 target을 뒤로 잡아버림.
-            // 또한, 일정 보정계수를 안 곱하면 목적지와의 거리와 lookaheadDistance가 비슷해질 때target을 뒤로 잡아버림.
+        else if ( sqrt(pow(dX(waypoints[waypoint_num][0]), 2) + pow(dY(waypoints[waypoint_num][1]), 2)) <= lookaheadDistance) { // 웨이포인트까지의 거리가 lookaheadDistance보다 가까운 경우
             targetX = waypoints[waypoint_num][0];
             targetY = waypoints[waypoint_num][1];
         }
@@ -167,11 +175,7 @@ public:
             double t1 = (- b - discriminant) / (2 * a);
             double t2 = (- b + discriminant) / (2 * a);
 
-            if ( (t1 >= 0) && (t1 <= 1) ) {
-                targetX = waypoints[waypoint_num - 1][0] + d[0] * t1;
-                targetY = waypoints[waypoint_num - 1][1] + d[1] * t1;
-            }
-            else if( (t2 >= 0) && (t2 <= 1) ) {
+            if( (t2 >= 0) && (t2 <= 1) ) {
                 targetX = waypoints[waypoint_num - 1][0] + d[0] * t2;
                 targetY = waypoints[waypoint_num - 1][1] + d[1] * t2;
             }
