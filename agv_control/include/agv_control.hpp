@@ -202,12 +202,14 @@ public:
             command[0] = v;
         }
 
-        if (distance(targetX, targetY) > 0.5) { // agv가 waypoint를 넘었을 때 갑자기 크게 회전하는 경우를 방지
+        if ( sqrt( pow(dX(waypoints[waypoint_num][0]), 2) + pow(dY(waypoints[waypoint_num][1]), 2) ) > 0.5) { // agv가 waypoint를 넘었을 때 갑자기 크게 회전하는 경우를 방지
             moveAngular(targetTheta());
         }
         else {
             command[1] = 0;
         }
+        cout << "distance: " << sqrt( pow(dX(waypoints[waypoint_num][0]), 2) + pow(dY(waypoints[waypoint_num][1]), 2) ) << endl; // "distance:
+        cout << "w: " << command[1] << endl;
 
         sum_distance += distance(targetX, targetY);
         past_distance = distance(targetX, targetY);
